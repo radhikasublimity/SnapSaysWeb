@@ -2,6 +2,7 @@
 "use client";
 import { useState } from "react";
 import Loader from "@/components/Loader";
+import { API_CONFIG } from "@/config/constants";
 
 interface CaptionOption {
   caption: string;
@@ -47,7 +48,7 @@ export default function Home() {
     formData.append("description", promptText);
 
     try {
-      const response = await fetch("http://localhost:5000/api/generate-caption", {
+      const response = await fetch(API_CONFIG.CAPTION_GENERATOR_URL, {
         method: "POST",
         body: formData,
       });
@@ -100,7 +101,7 @@ export default function Home() {
             Turn images into captions using AI-powered vision & language
           </p>
           <a 
-            href="/personality-portal" 
+            href={API_CONFIG.PERSONALITY_PORTAL_ROUTE} 
             className="inline-block mt-3 text-white hover:text-white/80 font-medium text-sm underline transition-colors"
           >
             Set up your personality profile →

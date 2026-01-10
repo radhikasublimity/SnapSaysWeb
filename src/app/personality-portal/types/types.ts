@@ -16,9 +16,9 @@ export type Platform = 'instagram' | 'snapchat' | 'linkedin' | 'multiple_platfor
 export interface PersonalityProfile {
   comfortZone?: string;
   socialApproach?: string;
-  freeTime?: string[];
+  freeTime?: string;
   foodPreference?: string;
-  favoritePlaces?: string[];
+  favoritePlaces?: string;
   personalityType?: string;
   stressManagement?: string;
   routinePreference?: string;
@@ -34,6 +34,7 @@ export interface QuestionOption {
   value: string;
   label: string;
   icon?: string;
+  optionId: number;
 }
 
 export interface Question {
@@ -41,7 +42,7 @@ export interface Question {
   question: string;
   options: QuestionOption[];
   field: keyof PersonalityProfile;
-  multiple?: boolean;
+  numericId: number;
 }
 
 export interface PageData {

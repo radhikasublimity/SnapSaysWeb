@@ -4,6 +4,7 @@ import { useState, ChangeEvent, FocusEvent } from "react";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { API_CONFIG } from "@/config/constants";
 
 const zodiacSigns = [
   "Aries",
@@ -20,19 +21,12 @@ const zodiacSigns = [
   "Pisces",
 ];
 
-const mbtiTypes = [
-  "INTJ", "INTP", "ENTJ", "ENTP",
-  "INFJ", "INFP", "ENFJ", "ENFP",
-  "ISTJ", "ISFJ", "ESTJ", "ESFJ",
-  "ISTP", "ISFP", "ESTP", "ESFP"
-];
-
 interface FormData {
   name: string;
   email: string;
-  password: "";
+  password: string;
   zodiac: string;
-  mbti: string;
+  dob: string;
 }
 
 interface InputProps {
@@ -66,7 +60,7 @@ export default function SnapSaysAuth() {
     email: "",
     password: "",
     zodiac: "",
-    mbti: ""
+    dob: ""
   });
 
   type TouchedFields = Partial<Record<keyof FormData, boolean>>;
@@ -84,6 +78,9 @@ export default function SnapSaysAuth() {
     if (name === "name" && !isLogin && !value.trim()) {
       error = "Name is required";
     }
+    if (name === "dob" && !isLogin && !value) {
+      error = "Birth date is required";
+    }
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
@@ -92,15 +89,40 @@ export default function SnapSaysAuth() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsLoading(false);
     
-    // Redirect based on mode
-    if (isLogin) {
-       router.push('/');
-    } else {
-       router.push('/personality-portal');
+    try {
+      if (isLogin) {
+        // Provided API URL uses query params: http://.../FetchUser?Username=...&Password=...
+        const url = `${API_CONFIG.LOGIN_URL}?Username=${encodeURIComponent(form.email)}&Password=${encodeURIComponent(form.password)}`;
+        
+        console.log("Calling Login API:", url);
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        console.log("Login API Response:", data);
+        
+        // Note: Check actual success condition from the API. assuming response.ok or success flag.
+        if (response.ok) {
+           router.push(API_CONFIG.HOME_ROUTE);
+        } else {
+           alert("Login failed: " + (data.message || "Invalid credentials"));
+        }
+      } else {
+        // Registration: Store credentials for SaveUser API call later
+        const pendingUser = {
+          username: form.email, // Using email as username
+          password: form.password
+        };
+        localStorage.setItem("pendingUser", JSON.stringify(pendingUser));
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        router.push(API_CONFIG.PERSONALITY_PORTAL_ROUTE);
+      }
+    } catch (error) {
+      console.error("Auth Error:", error);
+      alert("Authentication error. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -179,13 +201,13 @@ export default function SnapSaysAuth() {
                         onChange={(e) => setForm({ ...form, zodiac: e.target.value })}
                         error={touched.zodiac && !form.zodiac ? "Required" : undefined}
                     />
-                    <Select
-                        label="MBTI Type"
-                        value={form.mbti}
-                        options={mbtiTypes}
-                        onBlur={() => handleBlur("mbti")}
-                        onChange={(e) => setForm({ ...form, mbti: e.target.value })}
-                        error={touched.mbti && !form.mbti ? "Required" : undefined}
+                    <Input
+                        label="Birth Date"
+                        type="date"
+                        value={form.dob}
+                        onBlur={() => handleBlur("dob")}
+                        onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                        error={touched.dob && !form.dob ? "Required" : undefined}
                     />
                 </div>
             )}
@@ -208,7 +230,7 @@ export default function SnapSaysAuth() {
             <button
                 onClick={() => {
                     setIsLogin(!isLogin);
-                    setForm({ name: "", email: "", password: "", zodiac: "", mbti: "" });
+                    setForm({ name: "", email: "", password: "", zodiac: "", dob: "" });
                     setErrors({});
                     setTouched({});
                 }}

@@ -1,18 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PAGES } from './data/pages';
-import { PersonalityProfile } from './types/types';
+import { PersonalityProfile, Question } from './types/types';
 import { OptionCard, ProgressBar, NavigationButtons } from './components/UIComponents';
+import { API_CONFIG } from '@/config/constants';
 import './personality-portal.css';
 
 export default function PersonalityPortal() {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(0);
   const [profile, setProfile] = useState<PersonalityProfile>({
     version: '1.0',
   });
   const [isComplete, setIsComplete] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalQuestions = PAGES.reduce((acc, page) => acc + page.questions.length, 0);
   const answeredQuestions = Object.keys(profile).filter(
@@ -23,31 +27,19 @@ export default function PersonalityPortal() {
   const canGoNext = currentPageData?.questions.every(
     q => {
       const val = profile[q.field as keyof PersonalityProfile];
-      if (q.multiple) {
-        return Array.isArray(val) && val.length > 0;
-      }
       return val !== undefined && val !== '';
     }
   );
 
-  const handleOptionSelect = (field: keyof PersonalityProfile, value: string, multiple?: boolean) => {
-    setProfile(prev => {
-      if (multiple) {
-        const currentValues = (prev[field] as string[]) || [];
-        const newValues = currentValues.includes(value)
-          ? currentValues.filter(v => v !== value)
-          : [...currentValues, value];
-        return { ...prev, [field]: newValues };
-      }
-      return { ...prev, [field]: value };
-    });
+  const handleOptionSelect = (field: keyof PersonalityProfile, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNext = () => {
     if (currentPage < PAGES.length - 1) {
       setCurrentPage(prev => prev + 1);
     } else {
-      // Complete the profile
+      // Just mark as complete locally
       const completedProfile: PersonalityProfile = {
         ...profile,
         completedAt: new Date().toISOString(),
@@ -56,11 +48,64 @@ export default function PersonalityPortal() {
       setIsComplete(true);
       setShowConfetti(true);
       
-      // Save to localStorage
+      // Save locally but don't call API yet
       localStorage.setItem('personalityProfile', JSON.stringify(completedProfile));
-      
-      // Hide confetti after 3 seconds
       setTimeout(() => setShowConfetti(false), 3000);
+    }
+  };
+
+  const handleFinalSubmission = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Get credentials from localStorage
+      const pendingUserStr = localStorage.getItem('pendingUser');
+      const pendingUser = pendingUserStr ? JSON.parse(pendingUserStr) : { username: 'guest', password: '' };
+      
+      // 2. Map answers
+      const answers: { questionId: number; optionId: number }[] = [];
+      
+      PAGES.forEach(page => {
+        page.questions.forEach((q: Question) => {
+          const userChoice = profile[q.field as keyof PersonalityProfile];
+          
+          if (typeof userChoice === 'string') {
+              const opt = q.options.find(o => o.value === userChoice);
+              if (opt) {
+                answers.push({ questionId: q.numericId, optionId: opt.optionId });
+              }
+          }
+        });
+      });
+
+      // 3. Construct Payload
+      const payload = {
+        username: pendingUser.username,
+        password: pendingUser.password,
+        answers: answers
+      };
+
+      console.log("Final Submission SaveUser payload:", payload);
+
+      // 4. API Call
+      const response = await fetch(API_CONFIG.SAVE_USER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        localStorage.removeItem('pendingUser'); // Clean up only on success
+        router.push('/'); // Redirect to home
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert("Failed to save profile: " + (errorData.message || "Server Error"));
+      }
+    } catch (e) {
+      console.error("Submission error:", e);
+      alert("An error occurred while saving your profile.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -159,15 +204,24 @@ export default function PersonalityPortal() {
               <div className="flex gap-4">
                 <button
                   onClick={handleRestart}
+                  disabled={isSubmitting}
                   className="btn-secondary flex-1"
                 >
                   Retake Quiz
                 </button>
                 <button
-                  onClick={() => window.location.href = '/'}
-                  className="btn-primary flex-1"
+                  onClick={handleFinalSubmission}
+                  disabled={isSubmitting}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
                 >
-                  Start Creating →
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Start Creating →'
+                  )}
                 </button>
               </div>
             </div>
@@ -218,12 +272,8 @@ export default function PersonalityPortal() {
                         key={option.value}
                         label={option.label}
                         value={option.value}
-                        selected={
-                          question.multiple
-                            ? (profile[question.field as keyof PersonalityProfile] as string[] || []).includes(option.value)
-                            : profile[question.field as keyof PersonalityProfile] === option.value
-                        }
-                        onClick={() => handleOptionSelect(question.field as keyof PersonalityProfile, option.value, question.multiple)}
+                        selected={profile[question.field as keyof PersonalityProfile] === option.value}
+                        onClick={() => handleOptionSelect(question.field as keyof PersonalityProfile, option.value)}
                       />
                     ))}
                   </div>
@@ -235,8 +285,9 @@ export default function PersonalityPortal() {
             <NavigationButtons
               onBack={currentPage > 0 ? handleBack : undefined}
               onNext={handleNext}
-              canGoNext={canGoNext}
+              canGoNext={canGoNext && !isSubmitting}
               isLastPage={currentPage === PAGES.length - 1}
+              isLoading={isSubmitting}
             />
           </div>
 
