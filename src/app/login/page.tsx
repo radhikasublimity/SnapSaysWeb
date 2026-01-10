@@ -1,6 +1,9 @@
 
 "use client";
 import { useState, ChangeEvent, FocusEvent } from "react";
+import Loader from "@/components/Loader";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const zodiacSigns = [
   "Aries",
@@ -15,205 +18,259 @@ const zodiacSigns = [
   "Capricorn",
   "Aquarius",
   "Pisces",
-] as const;
+];
+
+const mbtiTypes = [
+  "INTJ", "INTP", "ENTJ", "ENTP",
+  "INFJ", "INFP", "ENFJ", "ENFP",
+  "ISTJ", "ISFJ", "ESTJ", "ESFJ",
+  "ISTP", "ISFP", "ESTP", "ESFP"
+];
 
 interface FormData {
   name: string;
-  dob: string;
-  zodiac: string;
-  gender: string;
   email: string;
-  password: string;
-}
-
-interface TouchedFields {
-  [key: string]: boolean;
-}
-
-interface Errors {
-  name: string | false;
-  dob: string | false;
-  zodiac: string | false;
-  gender: string | false;
-  email: string | false;
-  password: string | false;
+  password: "";
+  zodiac: string;
+  mbti: string;
 }
 
 interface InputProps {
   label: string;
-  error?: string | false;
   type?: string;
-  value: string;
-  onBlur: (e: FocusEvent<HTMLInputElement>) => void;
-  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  max?: string;
   placeholder?: string;
+  value: string;
+  error?: string;
+  onBlur: () => void;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
 interface SelectProps {
   label: string;
-  options: readonly string[] | string[];
-  error?: string | false;
   value: string;
-  onBlur: (e: FocusEvent<HTMLSelectElement>) => void;
+  options: string[];
+  error?: string;
+  onBlur: () => void;
   onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
 }
 
 export default function SnapSaysAuth() {
   const [isLogin, setIsLogin] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [touched, setTouched] = useState<TouchedFields>({});
+  
+  const router = useRouter();
+
   const [form, setForm] = useState<FormData>({
     name: "",
-    dob: "",
-    zodiac: "",
-    gender: "",
     email: "",
     password: "",
+    zodiac: "",
+    mbti: ""
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  type TouchedFields = Partial<Record<keyof FormData, boolean>>;
 
-  const errors: Errors = {
-    name: !form.name && "Name is required",
-    dob: !form.dob && "Date of Birth is required",
-    zodiac: !form.zodiac && "Zodiac sign is required",
-    gender: !form.gender && "Gender is required",
-    email: !/^\S+@\S+\.\S+$/.test(form.email) && "Valid email required",
-    password: form.password.length < 6 && "Minimum 6 characters",
+  const [errors, setErrors] = useState<Partial<FormData>>({});
+
+  const validateField = (name: keyof FormData, value: string) => {
+    let error = "";
+    if (name === "email" && !/\S+@\S+\.\S+/.test(value)) {
+      error = "Invalid email address";
+    }
+    if (name === "password" && value.length < 6) {
+      error = "Password must be at least 6 characters";
+    }
+    if (name === "name" && !isLogin && !value.trim()) {
+      error = "Name is required";
+    }
+    setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const handleBlur = (field: keyof FormData) =>
     setTouched({ ...touched, [field]: true });
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsLoading(false);
+    
+    // Redirect based on mode
+    if (isLogin) {
+       router.push('/');
+    } else {
+       router.push('/personality-portal');
+    }
+  };
 
   const isValid =
     Object.values(errors).every((e) => !e) &&
     (isLogin || Object.values(form).every(Boolean));
 
   return (
-    <div className="app-theme-bg flex items-center justify-center p-4">
-      <div className="glass-card w-full max-w-md p-8 page-enter">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-md">SnapSays ✨</h1>
-          <p className="text-white/80 text-lg font-medium">
-            {isLogin ? "Welcome Back!" : "Create Your Account"}
-          </p>
+    <div className="min-h-screen app-theme-bg flex items-center justify-center p-4">
+      <div className="glass-card w-full max-w-md p-8 relative overflow-hidden">
+        {/* Floating Particles Background */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+           <div className="floating-particle w-32 h-32 bg-purple-500/20 rounded-full blur-3xl absolute -top-10 -left-10 animate-float" />
+           <div className="floating-particle w-40 h-40 bg-pink-500/20 rounded-full blur-3xl absolute bottom-0 right-0 animate-float" style={{ animationDelay: "2s" }} />
         </div>
 
-        <form className="space-y-4">
-          {!isLogin && (
-            <>
-              <Input
-                label="Name"
-                type="text"
-                value={form.name}
-                placeholder="Enter your name"
-                onBlur={() => handleBlur("name")}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                error={touched.name && errors.name}
-              />
+        <div className="relative z-10">
+            <div className="text-center mb-8">
+            <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-2">
+                {isLogin ? "Welcome Back" : "Join SnapSays"}
+            </h1>
+            <p className="text-white/80 font-medium">
+                {isLogin ? "Continue your caption journey" : "Unlock your AI personality"}
+            </p>
+            </div>
 
-              <Input
-                label="Date of Birth"
-                type="date"
-                value={form.dob}
-                max={today}
-                onBlur={() => handleBlur("dob")}
-                onChange={(e) => setForm({ ...form, dob: e.target.value })}
-                error={touched.dob && errors.dob}
-              />
+            <form className="space-y-5">
+            {!isLogin && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <Input
+                        label="Full Name"
+                        placeholder="John Doe"
+                        value={form.name}
+                        onBlur={() => handleBlur("name")}
+                        onChange={(e) => {
+                        setForm({ ...form, name: e.target.value });
+                        if (touched.name) validateField("name", e.target.value);
+                        }}
+                        error={touched.name && errors.name ? errors.name : undefined}
+                    />
+                </div>
+            )}
 
-              <Select
-                label="Zodiac Sign"
-                options={zodiacSigns}
-                value={form.zodiac}
-                onBlur={() => handleBlur("zodiac")}
-                onChange={(e) => setForm({ ...form, zodiac: e.target.value })}
-                error={touched.zodiac && errors.zodiac}
-              />
+            <Input
+                label="Email Address"
+                placeholder="hello@example.com"
+                type="email"
+                value={form.email}
+                onBlur={() => handleBlur("email")}
+                onChange={(e) => {
+                setForm({ ...form, email: e.target.value });
+                if (touched.email) validateField("email", e.target.value);
+                }}
+                error={touched.email && errors.email ? errors.email : undefined}
+            />
 
-              <Select
-                label="Gender"
-                options={["Male", "Female", "Other"]}
-                value={form.gender}
-                onBlur={() => handleBlur("gender")}
-                onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                error={touched.gender && errors.gender}
-              />
-            </>
-          )}
+            <Input
+                label="Password"
+                type="password"
+                value={form.password}
+                onBlur={() => handleBlur("password")}
+                onChange={(e) => {
+                    setForm({ ...form, password: e.target.value });
+                    if (touched.password) validateField("password", e.target.value);
+                }}
+                error={touched.password && errors.password ? errors.password : undefined}
+            />
 
-          <Input
-            label="Email"
-            type="email"
-            value={form.email}
-            onBlur={() => handleBlur("email")}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            error={touched.email && errors.email}
-          />
+            {!isLogin && (
+                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-6 duration-500 delay-100">
+                    <Select
+                        label="Zodiac Sign"
+                        value={form.zodiac}
+                        options={zodiacSigns}
+                        onBlur={() => handleBlur("zodiac")}
+                        onChange={(e) => setForm({ ...form, zodiac: e.target.value })}
+                        error={touched.zodiac && !form.zodiac ? "Required" : undefined}
+                    />
+                    <Select
+                        label="MBTI Type"
+                        value={form.mbti}
+                        options={mbtiTypes}
+                        onBlur={() => handleBlur("mbti")}
+                        onChange={(e) => setForm({ ...form, mbti: e.target.value })}
+                        error={touched.mbti && !form.mbti ? "Required" : undefined}
+                    />
+                </div>
+            )}
 
-          <Input
-            label="Password"
-            type="password"
-            value={form.password}
-            onBlur={() => handleBlur("password")}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            error={touched.password && errors.password}
-          />
+            <button
+                type="button"
+                onClick={handleSubmit} 
+                disabled={!isValid || isLoading}
+                className="w-full btn-primary mt-6 mb-2 flex justify-center items-center h-12 text-lg font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
+            >
+                {isLoading ? (
+                <Loader text={isLogin ? "Logging in..." : "Creating Account..."} size="sm" />
+                ) : ( 
+                isLogin ? "Login to Dashboard" : "Create Account"
+                )}
+            </button>
+            </form>
 
-          <button
-            type="button"
-            disabled={!isValid}
-            className="w-full btn-primary mt-6 mb-2"
-          >
-            {isLogin ? "Login" : "Register"}
-          </button>
-        </form>
-
-        {/* Toggle */}
-        <p className="text-center text-white/90 mt-6">
-          {isLogin ? "New to SnapSays?" : "Already a user?"}{" "}
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="font-semibold underline hover:text-white transition"
-          >
-            {isLogin ? "Register" : "Login"}
-          </button>
-        </p>
+            <div className="mt-6 text-center">
+            <button
+                onClick={() => {
+                    setIsLogin(!isLogin);
+                    setForm({ name: "", email: "", password: "", zodiac: "", mbti: "" });
+                    setErrors({});
+                    setTouched({});
+                }}
+                className="text-white hover:text-white/80 font-medium text-sm transition-colors border-b border-white/30 hover:border-white pb-0.5"
+            >
+                {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Login"}
+            </button>
+            </div>
+        </div>
       </div>
     </div>
   );
 }
 
-/* Reusable Components */
-const Input = ({ label, error ,placeholder, ...props }: InputProps) => (
-  <div>
-    <label className="block text-white/90 font-medium mb-2">{label}</label>
+const Input = ({ label, error, ...props }: InputProps) => (
+  <div className="flex flex-col gap-1.5 group">
+    <label className="text-sm font-semibold text-white ml-1 group-focus-within:text-purple-200 transition-colors">
+        {label}
+    </label>
     <input
       {...props}
-      placeholder={placeholder}
-      className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      className={`
+        px-4 py-3 rounded-xl bg-white/10 border-2 outline-none text-white placeholder-white/40 transition-all duration-300
+        ${error 
+            ? "border-red-400 bg-red-500/10 focus:border-red-400" 
+            : "border-white/10 focus:border-white/40 focus:bg-white/20 hover:border-white/20"
+        }
+      `}
     />
-    {error && <p className="text-red-300 text-sm mt-1">{error}</p>}
+    {error && <span className="text-xs text-red-200 font-medium ml-1 bg-red-500/20 px-2 py-0.5 rounded-md inline-block w-fit">{error}</span>}
   </div>
 );
 
 const Select = ({ label, options, error, ...props }: SelectProps) => (
-  <div>
-    <label className="block text-white/90 font-medium mb-2">{label}</label>
-    <select
-      {...props}
-      className="w-full px-4 py-2 rounded-lg bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
-    >
-      <option value="" className="text-gray-800">
-        Select
-      </option>
-      {options.map((o) => (
-        <option key={o} value={o} className="text-gray-800">
-          {o}
-        </option>
-      ))}
-    </select>
-    {error && <p className="text-red-300 text-sm mt-1">{error}</p>}
+  <div className="flex flex-col gap-1.5 group">
+    <label className="text-sm font-semibold text-white ml-1 group-focus-within:text-purple-200 transition-colors">
+        {label}
+    </label>
+    <div className="relative">
+        <select
+        {...props}
+        className={`
+            w-full px-4 py-3 rounded-xl bg-white/10 border-2 outline-none text-white appearance-none transition-all duration-300 cursor-pointer
+            ${error 
+                ? "border-red-400 bg-red-500/10 focus:border-red-400" 
+                : "border-white/10 focus:border-white/40 focus:bg-white/20 hover:border-white/20"
+            }
+        `}
+        >
+        <option value="" className="bg-gray-800 text-gray-400">Select...</option>
+        {options.map((opt) => (
+            <option key={opt} value={opt} className="bg-gray-800 text-white">
+            {opt}
+            </option>
+        ))}
+        </select>
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+    </div>
+    {error && <span className="text-xs text-red-200 font-medium ml-1 bg-red-500/20 px-2 py-0.5 rounded-md inline-block w-fit">{error}</span>}
   </div>
 );
