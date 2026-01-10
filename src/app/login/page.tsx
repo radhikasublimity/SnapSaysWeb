@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, ChangeEvent, FocusEvent } from "react";
+import { useState, useEffect, ChangeEvent, FocusEvent } from "react";
 import Loader from "@/components/Loader";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,13 @@ export default function SnapSaysAuth() {
   
   const router = useRouter();
 
+  // Clear session and local storage on mount to reduce confusion
+  useEffect(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+    console.log("Auth storage cleared on mount");
+  }, []);
+
   const [form, setForm] = useState<FormData>({
     name: "",
     email: "",
@@ -103,6 +110,12 @@ export default function SnapSaysAuth() {
         
         // Note: Check actual success condition from the API. assuming response.ok or success flag.
         if (response.ok) {
+           // Save personality details to sessionStorage
+           if (data.Data && data.Data.User_Personality_Details) {
+             sessionStorage.setItem("userPersonality", JSON.stringify(data.Data.User_Personality_Details));
+           }
+           
+           alert("Login successful! Welcome back.");
            router.push(API_CONFIG.HOME_ROUTE);
         } else {
            alert("Login failed: " + (data.message || "Invalid credentials"));
@@ -115,7 +128,7 @@ export default function SnapSaysAuth() {
         };
         localStorage.setItem("pendingUser", JSON.stringify(pendingUser));
         
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        alert("Account created successfully! Let's build your AI personality profile.");
         router.push(API_CONFIG.PERSONALITY_PORTAL_ROUTE);
       }
     } catch (error) {
@@ -141,6 +154,16 @@ export default function SnapSaysAuth() {
 
         <div className="relative z-10">
             <div className="text-center mb-8">
+            <div className="mb-6 flex justify-center">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <img 
+                  src="/logoMain.png" 
+                  alt="SnapSays Logo" 
+                  className="relative w-24 h-auto drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+                />
+              </div>
+            </div>
             <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-2">
                 {isLogin ? "Welcome Back" : "Join SnapSays"}
             </h1>

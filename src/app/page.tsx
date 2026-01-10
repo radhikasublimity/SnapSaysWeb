@@ -118,9 +118,21 @@ export default function Home() {
     const formData = new FormData();
     formData.append("image", image);
 
+    // Get personality data from sessionStorage
+    let personalityKnowledge = "";
+    try {
+      const storedPersonality = sessionStorage.getItem("userPersonality");
+      if (storedPersonality) {
+        const personalityArray = JSON.parse(storedPersonality);
+        personalityKnowledge = "User Personality Summary: " + personalityArray.map((item: any) => `${item.Question}: ${item.Answer}`).join(". ");
+      }
+    } catch (e) {
+      console.error("Failed to load personality knowledge", e);
+    }
+
     const promptText = platform === "Instagram"
-      ? "You are a professional Instagram copywriter and personal brand strategist. Given an image of a person and a JSON describing their personality, tone, values, and style, analyze both and generate exactly 5 Instagram captions aligned with their visual presence and personal brand. Each caption must be ready to post, vary in tone and style (confident, reflective, witty, bold, minimal), and include suitable hashtags only when they fit naturally. Do not mention the image or the JSON. Return the response as a JSON array of 5 objects, each with a caption string and a hashtags array."
-      : "You are a professional LinkedIn copywriter and personal brand strategist. Given an image of a person and a JSON describing their personality, tone, values, and professional style, analyze both and generate exactly 5 LinkedIn posts aligned with their visual presence and personal brand. Each post must be ready to publish, vary in tone (professional, thoughtful, confident, inspirational, conversational), follow LinkedIn norms, and include relevant hashtags only when they add value. Do not mention the image or JSON. Return the response as a JSON array of 5 objects, each with a post string and a hashtags array.";
+      ? `You are a professional Instagram copywriter and personal brand strategist. ${personalityKnowledge} Given an image of a person, first analyze the facial expression and overall face sentiment (for example: calm, confident, thoughtful, playful, intense). Use this emotional insight internally to guide tone, word choice, and message alignment. Generate exactly 5 Instagram captions aligned with their visual presence, personality profile, and emotional state. Each caption must be ready to post, vary in tone, and include suitable hashtags. Do not mention the personality summary, the facial analysis, or the image description directly. Return the response as a JSON array of 5 objects, each with 'caption' and 'hashtags' keys.`
+      : `You are a professional LinkedIn copywriter and personal brand strategist. ${personalityKnowledge} Given an image of a person, first analyze the facial expression and overall face sentiment (for example: calm, confident, thoughtful, playful, intense). Use this emotional insight internally to guide tone, word choice, and message alignment. Generate exactly 5 LinkedIn posts aligned with their visual presence, professional personality profile, and emotional state. Each post must be ready to publish, vary in tone, and include relevant hashtags. Do not mention the personality summary, the facial analysis, or the image description directly. Return the response as a JSON array of 5 objects, each with 'post' and 'hashtags' keys.`;
 
     formData.append("description", promptText);
 
@@ -169,8 +181,18 @@ export default function Home() {
   return (
     <div className="app-theme-bg flex items-center justify-center p-4 min-h-screen">
       <div className="glass-card w-full max-w-lg p-8 hover:scale-[1.005] transition-transform">
-        {/* Header */}
-        <div className="text-center mb-6">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <div className="mb-4 flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img
+                src="/logoMain.png"
+                alt="SnapSays Logo"
+                className="relative w-24 h-auto drop-shadow-xl transform group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+          </div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
             SnapSays ✨
           </h1>
