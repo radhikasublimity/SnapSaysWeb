@@ -104,8 +104,18 @@ export default function Home() {
   return (
     <div className="app-theme-bg flex items-center justify-center p-4 min-h-screen">
       <div className="glass-card w-full max-w-lg p-8 hover:scale-[1.005] transition-transform">
-        {/* Header */}
-        <div className="text-center mb-6">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <div className="mb-4 flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img 
+                src="/logoMain.png" 
+                alt="SnapSays Logo" 
+                className="relative w-24 h-auto drop-shadow-xl transform group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+          </div>
           <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-md">
             SnapSays ✨
           </h1>

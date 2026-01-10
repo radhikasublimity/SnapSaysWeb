@@ -154,6 +154,16 @@ export default function SnapSaysAuth() {
 
         <div className="relative z-10">
             <div className="text-center mb-8">
+            <div className="mb-6 flex justify-center">
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <img 
+                  src="/logoMain.png" 
+                  alt="SnapSays Logo" 
+                  className="relative w-24 h-auto drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+                />
+              </div>
+            </div>
             <h1 className="text-4xl font-extrabold text-white tracking-tight drop-shadow-lg mb-2">
                 {isLogin ? "Welcome Back" : "Join SnapSays"}
             </h1>
