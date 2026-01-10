@@ -41,6 +41,69 @@ export default function Home() {
     setGeneratedImage(null); // Reset generated image
   };
 
+  const addWatermark = async (imageUrl: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageUrl;
+
+      const logo = new Image();
+      logo.crossOrigin = "anonymous";
+      logo.src = "/favicon.ico";
+
+      const loadImages = Promise.all([
+        new Promise((res, rej) => { img.onload = res; img.onerror = rej; }),
+        new Promise((res) => { logo.onload = res; logo.onerror = () => res(null); }) // weak fail for logo
+      ]);
+
+      loadImages.then(() => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Could not get canvas context"));
+          return;
+        }
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+
+        // Watermark Configuration
+        const text = "SnapSays AI ✨";
+        const fontSize = Math.max(20, canvas.width * 0.04);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+
+        const padding = fontSize;
+        const x = canvas.width - padding;
+        const y = canvas.height - padding;
+
+        // Draw Text
+        ctx.shadowColor = "rgba(0, 0, 0, 0.7)";
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.fillText(text, x, y);
+
+        // Draw Logo (Favicon)
+        // Position logo to the left of the text
+        const textMetrics = ctx.measureText(text);
+        const logoSize = fontSize * 1.5;
+        const logoX = x - textMetrics.width - logoSize - (padding / 2);
+        const logoY = y - fontSize + (fontSize - logoSize) / 2; // Align roughly with text center/baseline
+
+        // Draw logo with shadow
+        ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
+
+        resolve(canvas.toDataURL("image/png"));
+      }).catch(e => reject(e));
+    });
+  };
+
   const handleRemoveBg = async () => {
     if (!image) {
       setAlert({ message: "Please upload an image first!", type: 'warning' });
@@ -83,7 +146,10 @@ export default function Home() {
       const blob = await response.blob();
       const newImageUrl = URL.createObjectURL(blob);
 
-      setGeneratedImage(newImageUrl);
+      // Add Watermark
+      const watermarkedImage = await addWatermark(newImageUrl);
+
+      setGeneratedImage(watermarkedImage);
       setAlert({ message: "Background replaced successfully! ✨", type: 'success' });
 
     } catch (error: any) {
