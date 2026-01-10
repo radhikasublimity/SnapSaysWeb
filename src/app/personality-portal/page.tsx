@@ -95,8 +95,10 @@ export default function PersonalityPortal() {
       });
 
       if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        alert(data.message || "Your personality profile has been saved! Redirecting to login...");
         localStorage.removeItem('pendingUser'); // Clean up only on success
-        router.push('/'); // Redirect to home
+        router.push('/login'); // Redirect to login
       } else {
         const errorData = await response.json().catch(() => ({}));
         alert("Failed to save profile: " + (errorData.message || "Server Error"));
