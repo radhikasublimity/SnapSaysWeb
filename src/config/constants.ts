@@ -3,7 +3,7 @@ export const API_CONFIG = {
   LOGIN_URL: 'http://fapindetails.sublimitysoft.com/api/api//Common/FetchUser',
 
   // Existing local capture generation API
-  CAPTION_GENERATOR_URL: 'http://192.168.1.56:5000/api/generate-caption',
+  CAPTION_GENERATOR_URL: 'http://192.168.0.123:5000/api/generate-caption',
 
   // Personality Portal (Internal)
   PERSONALITY_PORTAL_ROUTE: '/personality-portal',
@@ -11,6 +11,6 @@ export const API_CONFIG = {
 
   // New SaveUser API
   SAVE_USER_URL: 'http://fapindetails.sublimitysoft.com/api/api//Common/SaveUser',
-  // Remove Background API
-  // REMOVE_BG_URL: DEPRECATED - now using Client-side Gemini SDK
+  // Background Replacement API
+  REPLACE_BG_URL: 'http://192.168.0.123:5000/api/replace-background',
 };

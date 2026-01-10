@@ -6,6 +6,7 @@ import { PAGES } from './data/pages';
 import { PersonalityProfile, Question } from './types/types';
 import { OptionCard, ProgressBar, NavigationButtons } from './components/UIComponents';
 import { API_CONFIG } from '@/config/constants';
+import Alert from '@/components/Alert';
 import './personality-portal.css';
 
 export default function PersonalityPortal() {
@@ -17,6 +18,7 @@ export default function PersonalityPortal() {
   const [isComplete, setIsComplete] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const totalQuestions = PAGES.reduce((acc, page) => acc + page.questions.length, 0);
   const answeredQuestions = Object.keys(profile).filter(
@@ -96,16 +98,16 @@ export default function PersonalityPortal() {
 
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
-        alert(data.message || "Your personality profile has been saved! Redirecting to login...");
+        setAlert({ message: data.message || "Your personality profile has been saved! Redirecting to login...", type: 'success' });
         localStorage.removeItem('pendingUser'); // Clean up only on success
-        router.push('/login'); // Redirect to login
+        setTimeout(() => router.push('/login'), 2000); // Redirect to login after show alert
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert("Failed to save profile: " + (errorData.message || "Server Error"));
+        setAlert({ message: "Failed to save profile: " + (errorData.message || "Server Error"), type: 'error' });
       }
     } catch (e) {
       console.error("Submission error:", e);
-      alert("An error occurred while saving your profile.");
+      setAlert({ message: "An error occurred while saving your profile.", type: 'error' });
     } finally {
       setIsSubmitting(false);
     }
@@ -151,6 +153,11 @@ export default function PersonalityPortal() {
   if (isComplete) {
     return (
       <div className="personality-portal-bg">
+        <Alert 
+          message={alert?.message || null} 
+          type={alert?.type} 
+          onClose={() => setAlert(null)} 
+        />
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50">
             {Array.from({ length: 50 }, (_, i) => (
@@ -235,6 +242,11 @@ export default function PersonalityPortal() {
 
   return (
     <div className="personality-portal-bg">
+      <Alert 
+        message={alert?.message || null} 
+        type={alert?.type} 
+        onClose={() => setAlert(null)} 
+      />
       {/* Floating Particles */}
       {particles.map(particle => (
         <div

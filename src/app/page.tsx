@@ -2,8 +2,8 @@
 "use client";
 import { useState } from "react";
 import Loader from "@/components/Loader";
+import Alert from "@/components/Alert";
 import { API_CONFIG } from "@/config/constants";
-import { GoogleGenAI } from "@google/genai";
 
 interface CaptionOption {
   caption: string;
@@ -17,11 +17,9 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [generatedCaption, setGeneratedCaption] = useState<CaptionOption[] | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'warning' | 'error' } | null>(null);
 
-
-  const ai = new GoogleGenAI({ apiKey: "AIzaSyAo8iRECAMzKsm82djcHQ998idozzEvgfw" });
-
-  // Remove Background States
+  // Background Replacement States
   const [showRemoveBg, setShowRemoveBg] = useState(false);
   const [bgDescription, setBgDescription] = useState("");
   const [isBgLoading, setIsBgLoading] = useState(false);
@@ -43,74 +41,60 @@ export default function Home() {
     setGeneratedImage(null); // Reset generated image
   };
 
-  const fileToGenerativePart = async (file: File): Promise<{ inlineData: { data: string; mimeType: string } }> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Data = (reader.result as string).split(",")[1];
-        resolve({
-          inlineData: {
-            data: base64Data,
-            mimeType: file.type,
-          },
-        });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleRemoveBg = async () => {
-    if (!image) { alert("Please upload an image first!"); return; }
-    if (!bgDescription.trim()) { alert("Please describe what to remove/change!"); return; }
+    if (!image) { 
+      setAlert({ message: "Please upload an image first!", type: 'warning' }); 
+      return; 
+    }
+    if (!bgDescription.trim()) { 
+      setAlert({ message: "Please describe what to remove/change!", type: 'warning' }); 
+      return; 
+    }
 
     setIsBgLoading(true);
     setGeneratedImage(null);
 
+    const formData = new FormData();
+    formData.append("image", image);
+    formData.append("description", bgDescription.trim());
+
     try {
-      // Convert image to base64 for API
-      const imagePart = await fileToGenerativePart(image);
-
-      const contents = [
-        imagePart,
-        { text: bgDescription.trim() }
-      ];
-
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: contents,
+      const response = await fetch(API_CONFIG.REPLACE_BG_URL, {
+        method: "POST",
+        body: formData,
       });
 
-      console.log(response);
-
-      const parts = response.candidates?.[0]?.content?.parts;
-      const generatedImagePart = parts?.find((part: any) => part.inlineData);
-
-      if (generatedImagePart && generatedImagePart.inlineData) {
-        const newImageUrl = `data:image/png;base64,${generatedImagePart.inlineData.data}`;
-        setGeneratedImage(newImageUrl);
-        alert("Image generated successfully!");
-      } else {
-        // If no image is returned, it might be a text response or refusal
-        const textPart = parts?.find((part: any) => part.text);
-        if (textPart) {
-          alert(`AI Response: ${textPart.text}`);
-        } else {
-          throw new Error("No image generated");
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to replace background");
       }
 
-    } catch (error) {
+      const data = await response.json();
+
+      if (data.newImage) {
+        setGeneratedImage(`data:image/png;base64,${data.newImage}`);
+        setAlert({ message: "Background replaced successfully! ✨", type: 'success' });
+      } else {
+        throw new Error("API returned no image");
+      }
+
+    } catch (error: any) {
       console.error(error);
-      alert("Failed to generate image. Please try again.");
+      setAlert({ message: `Error: ${error.message}`, type: 'error' });
     } finally {
       setIsBgLoading(false);
     }
   };
 
   const generateCaption = async () => {
-    if (!image) { alert("Please upload an image first!"); return; }
-    if (!platform) { alert("Please select a platform!"); return; }
+    if (!image) { 
+      setAlert({ message: "Please upload an image first!", type: 'warning' }); 
+      return; 
+    }
+    if (!platform) { 
+      setAlert({ message: "Please select a platform!", type: 'warning' }); 
+      return; 
+    }
 
     setIsLoading(true);
     setGeneratedCaption(null);
@@ -172,7 +156,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error(error);
-      alert("Failed to generate caption.");
+      setAlert({ message: "Failed to generate caption.", type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -180,12 +164,17 @@ export default function Home() {
 
   return (
     <div className="app-theme-bg flex items-center justify-center p-4 min-h-screen">
+      <Alert 
+        message={alert?.message || null} 
+        type={alert?.type as any} 
+        onClose={() => setAlert(null)} 
+      />
       <div className="glass-card w-full max-w-lg p-8 hover:scale-[1.005] transition-transform">
         {/* Logo & Header */}
         <div className="text-center mb-8">
           <div className="mb-4 flex justify-center">
             <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
               <img
                 src="/logoMain.png"
                 alt="SnapSays Logo"
@@ -199,12 +188,7 @@ export default function Home() {
           <p className="text-white/90 mt-2 text-sm font-medium">
             Turn images into captions using AI-powered vision & language
           </p>
-          <a
-            href={API_CONFIG.PERSONALITY_PORTAL_ROUTE}
-            className="inline-block mt-3 text-white hover:text-white/80 font-medium text-sm underline transition-colors"
-          >
-            Set up your personality profile →
-          </a>
+          
         </div>
 
         {/* Image Upload */}

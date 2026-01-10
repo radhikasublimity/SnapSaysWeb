@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, ChangeEvent, FocusEvent } from "react";
 import Loader from "@/components/Loader";
+import Alert from "@/components/Alert";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { API_CONFIG } from "@/config/constants";
@@ -49,9 +50,10 @@ interface SelectProps {
 }
 
 export default function SnapSaysAuth() {
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [touched, setTouched] = useState<TouchedFields>({});
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   
   const router = useRouter();
 
@@ -115,10 +117,10 @@ export default function SnapSaysAuth() {
              sessionStorage.setItem("userPersonality", JSON.stringify(data.Data.User_Personality_Details));
            }
            
-           alert("Login successful! Welcome back.");
-           router.push(API_CONFIG.HOME_ROUTE);
+           setAlert({ message: "Login successful! Welcome back.", type: 'success' });
+           setTimeout(() => router.push(API_CONFIG.HOME_ROUTE), 1500);
         } else {
-           alert("Login failed: " + (data.message || "Invalid credentials"));
+           setAlert({ message: "Login failed: " + (data.message || "Invalid credentials"), type: 'error' });
         }
       } else {
         // Registration: Store credentials for SaveUser API call later
@@ -128,12 +130,12 @@ export default function SnapSaysAuth() {
         };
         localStorage.setItem("pendingUser", JSON.stringify(pendingUser));
         
-        alert("Account created successfully! Let's build your AI personality profile.");
-        router.push(API_CONFIG.PERSONALITY_PORTAL_ROUTE);
+        setAlert({ message: "Account created successfully! Let's build your AI personality profile.", type: 'success' });
+        setTimeout(() => router.push(API_CONFIG.PERSONALITY_PORTAL_ROUTE), 2000);
       }
     } catch (error) {
       console.error("Auth Error:", error);
-      alert("Authentication error. Please try again.");
+      setAlert({ message: "Authentication error. Please try again.", type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -145,6 +147,11 @@ export default function SnapSaysAuth() {
 
   return (
     <div className="min-h-screen app-theme-bg flex items-center justify-center p-4">
+      <Alert 
+        message={alert?.message || null} 
+        type={alert?.type} 
+        onClose={() => setAlert(null)} 
+      />
       <div className="glass-card w-full max-w-md p-8 relative overflow-hidden">
         {/* Floating Particles Background */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
@@ -156,7 +163,7 @@ export default function SnapSaysAuth() {
             <div className="text-center mb-8">
             <div className="mb-6 flex justify-center">
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <img 
                   src="/logoMain.png" 
                   alt="SnapSays Logo" 
