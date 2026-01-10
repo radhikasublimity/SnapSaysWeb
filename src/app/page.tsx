@@ -42,41 +42,49 @@ export default function Home() {
   };
 
   const handleRemoveBg = async () => {
-    if (!image) { 
-      setAlert({ message: "Please upload an image first!", type: 'warning' }); 
-      return; 
+    if (!image) {
+      setAlert({ message: "Please upload an image first!", type: 'warning' });
+      return;
     }
-    if (!bgDescription.trim()) { 
-      setAlert({ message: "Please describe what to remove/change!", type: 'warning' }); 
-      return; 
+    if (!bgDescription.trim()) {
+      setAlert({ message: "Please describe what to remove/change!", type: 'warning' });
+      return;
     }
 
     setIsBgLoading(true);
     setGeneratedImage(null);
 
     const formData = new FormData();
-    formData.append("image", image);
-    formData.append("description", bgDescription.trim());
+    formData.append("image_file", image);
+    formData.append("prompt", bgDescription.trim());
 
     try {
-      const response = await fetch(API_CONFIG.REPLACE_BG_URL, {
+      const response = await fetch(API_CONFIG.CLIPDROP_CONFIG.URL, {
         method: "POST",
+        headers: {
+          'x-api-key': API_CONFIG.CLIPDROP_CONFIG.API_KEY,
+        },
         body: formData,
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to replace background");
+        // Try to read error as JSON, fallback to status text
+        const errorText = await response.text();
+        let errorMessage = `Failed to replace background (${response.status})`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error) errorMessage = errorJson.error;
+        } catch (e) { /* ignore json parse error */ }
+
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
+      // Clipdrop returns the image binary
+      const blob = await response.blob();
+      const newImageUrl = URL.createObjectURL(blob);
 
-      if (data.newImage) {
-        setGeneratedImage(`data:image/png;base64,${data.newImage}`);
-        setAlert({ message: "Background replaced successfully! ✨", type: 'success' });
-      } else {
-        throw new Error("API returned no image");
-      }
+      setGeneratedImage(newImageUrl);
+      setAlert({ message: "Background replaced successfully! ✨", type: 'success' });
 
     } catch (error: any) {
       console.error(error);
@@ -87,13 +95,13 @@ export default function Home() {
   };
 
   const generateCaption = async () => {
-    if (!image) { 
-      setAlert({ message: "Please upload an image first!", type: 'warning' }); 
-      return; 
+    if (!image) {
+      setAlert({ message: "Please upload an image first!", type: 'warning' });
+      return;
     }
-    if (!platform) { 
-      setAlert({ message: "Please select a platform!", type: 'warning' }); 
-      return; 
+    if (!platform) {
+      setAlert({ message: "Please select a platform!", type: 'warning' });
+      return;
     }
 
     setIsLoading(true);
@@ -164,12 +172,12 @@ export default function Home() {
 
   return (
     <div className="app-theme-bg flex items-center justify-center p-4 min-h-screen">
-      <Alert 
-        message={alert?.message || null} 
-        type={alert?.type as any} 
-        onClose={() => setAlert(null)} 
+      <Alert
+        message={alert?.message || null}
+        type={alert?.type as any}
+        onClose={() => setAlert(null)}
       />
-      
+
       <div className={`flex flex-col ${generatedCaption ? 'xl:flex-row xl:items-stretch' : 'items-center'} justify-center gap-8 w-full transition-all duration-700`}>
         {/* Input Box */}
         <div className="glass-card w-full max-w-lg p-8 shrink-0 animate-in fade-in duration-500 flex flex-col">
@@ -341,7 +349,7 @@ export default function Home() {
         {generatedCaption && (
           <div className="glass-card w-full max-w-4xl p-8 animate-in fade-in slide-in-from-right-8 duration-700 flex flex-col">
             <h3 className="text-white font-bold text-3xl mb-8 text-center drop-shadow-lg flex items-center justify-center gap-3 border-b border-white/10 pb-6">
-              <span className="animate-bounce">✨</span> 
+              <span className="animate-bounce">✨</span>
               Caption Options
             </h3>
 
