@@ -167,7 +167,7 @@ export default function SnapSaysAuth() {
                 <img 
                   src="/logoMain.png" 
                   alt="SnapSays Logo" 
-                  className="relative w-24 h-auto drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+                  className="relative w-40 h-40 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
                 />
               </div>
             </div>
@@ -256,20 +256,63 @@ export default function SnapSaysAuth() {
             </button>
             </form>
 
-            <div className="mt-6 text-center">
-            <button
+            <div className="mt-8 text-center relative z-20">
+              <button
+                type="button"
                 onClick={() => {
-                    setIsLogin(!isLogin);
-                    setForm({ name: "", email: "", password: "", zodiac: "", dob: "" });
-                    setErrors({});
-                    setTouched({});
+                  setIsLogin(!isLogin);
+                  setForm({ name: "", email: "", password: "", zodiac: "", dob: "" });
+                  setErrors({});
+                  setTouched({});
                 }}
-                className="text-white hover:text-white/80 font-medium text-sm transition-colors border-b border-white/30 hover:border-white pb-0.5"
-            >
-                {isLogin
-                ? "Don't have an account? Sign up"
-                : "Already have an account? Login"}
-            </button>
+                className="text-white hover:text-white/80 font-medium text-sm transition-all border-b border-white/30 hover:border-white pb-0.5"
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
+              </button>
+            </div>
+
+            {/* Social Logins */}
+            <div className="mt-8 pt-6 border-white/20">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="flex-1 h-px bg-white/20"></div>
+                <span className="text-xs uppercase tracking-[0.2em] text-white font-bold whitespace-nowrap drop-shadow-sm">Social Login</span>
+                <div className="flex-1 h-px bg-white/20"></div>
+              </div>
+              
+              <div className="flex justify-center gap-6 mb-4">
+                {/* Facebook */}
+                <button
+                  type="button"
+                  className="w-16 h-16 rounded-2xl bg-[#1877F2]/10 border border-[#1877F2]/30 text-white flex items-center justify-center hover:bg-[#1877F2]/20 hover:scale-110 transition-all cursor-pointer group shadow-lg shadow-[#1877F2]/10"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </button>
+
+                {/* Instagram */}
+                <button
+                  type="button"
+                  className="w-16 h-16 rounded-2xl bg-white/5 border border-white/20 text-white flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all cursor-pointer group shadow-lg"
+                >
+                  <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045] rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>
+                  </div>
+                </button>
+
+                {/* LinkedIn */}
+                <button
+                  type="button"
+                  className="w-16 h-16 rounded-2xl bg-[#0A66C2]/10 border border-[#0A66C2]/30 text-white flex items-center justify-center hover:bg-[#0A66C2]/20 hover:scale-110 transition-all cursor-pointer group shadow-lg shadow-[#0A66C2]/10"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#0A66C2"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Footer Hint */}
+            <div className="mt-12 pt-6 border-t border-white/10">
+              <p className="text-sm text-center text-white font-bold tracking-widest opacity-90 drop-shadow-md">
+                  Powered by Artificially Intelligent Team
+              </p>
             </div>
         </div>
       </div>

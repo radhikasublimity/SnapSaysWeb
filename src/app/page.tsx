@@ -244,7 +244,7 @@ export default function Home() {
         onClose={() => setAlert(null)}
       />
 
-      <div className={`flex flex-col ${generatedCaption ? 'xl:flex-row xl:items-stretch' : 'items-center'} justify-center gap-8 w-full transition-all duration-700`}>
+      <div className={`flex flex-col ${(generatedCaption || generatedImage) ? 'xl:flex-row xl:items-stretch' : 'items-center'} justify-center gap-8 w-full transition-all duration-700`}>
         {/* Input Box */}
         <div className="glass-card w-full max-w-lg p-8 shrink-0 animate-in fade-in duration-500 flex flex-col">
           {/* Logo & Header */}
@@ -299,10 +299,11 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setShowRemoveBg(true)}
-                className="w-full py-2.5 rounded-xl border border-white/20 bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-2 backdrop-blur-sm mb-4"
+                className="w-full py-2.5 rounded-xl border border-white/20 bg-white/10 text-white font-medium text-sm hover:bg-white/20 transition-all flex items-center justify-center gap-2 backdrop-blur-sm mb-4 bg-blue-500"
               >
+                
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l18 18" /><path d="M19 9a7 7 0 1 0-8.8 8.8" /></svg>
-                Remove Background Image
+                Change Background Image
               </button>
             ) : (
               <div className="bg-white/5 p-4 rounded-xl border border-white/10 animate-in fade-in zoom-in-95 duration-200">
@@ -333,42 +334,6 @@ export default function Home() {
               </div>
             )}
           </div>
-
-          {/* Generated Image Result */}
-          {generatedImage && (
-            <div className="mb-8 animate-in fade-in zoom-in-95 duration-500">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 shadow-2xl">
-                <h3 className="text-white font-bold text-center mb-4 text-xl">
-                  🎨 AI Edited Result
-                </h3>
-                <div className="relative rounded-xl overflow-hidden shadow-lg border-2 border-white/10 group">
-                  <img
-                    src={generatedImage}
-                    alt="AI Generated"
-                    className="w-full h-auto object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <a
-                      href={generatedImage}
-                      download="ai-generated-image.png"
-                      className="px-6 py-2 bg-white text-gray-900 rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                      Download HD
-                    </a>
-                  </div>
-                </div>
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => { setGeneratedImage(null); setShowRemoveBg(false); }}
-                    className="text-white/60 text-sm hover:text-white underline transition-colors"
-                  >
-                    Clear & Start Over
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Platform Selector */}
           {!showRemoveBg && <div className="mb-6">
@@ -409,63 +374,115 @@ export default function Home() {
               "Generate Caption 🚀"
             )}
           </button>}
+
+          {/* Footer Hint */}
+          <p className="text-sm text-center text-white font-bold tracking-widest mt-8 opacity-90 drop-shadow-md">
+            Powered by Artificially Intelligent Team
+          </p>
         </div>
 
-        {/* Results Box - Separate Container */}
-        {generatedCaption && (
+        {/* Results Box - Consolidating Image and Captions */}
+        {(generatedCaption || generatedImage) && (
           <div className="glass-card w-full max-w-4xl p-8 animate-in fade-in slide-in-from-right-8 duration-700 flex flex-col">
-            <h3 className="text-white font-bold text-3xl mb-8 text-center drop-shadow-lg flex items-center justify-center gap-3 border-b border-white/10 pb-6">
-              <span className="animate-bounce">✨</span>
-              Caption Options
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {Array.isArray(generatedCaption) && generatedCaption.map((option, index) => (
-                <div key={index} className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/60 transition-all hover:scale-[1.02] hover:shadow-2xl relative overflow-hidden group flex flex-col min-h-[220px]">
-                  <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-purple-500 to-pink-500 opacity-80" />
-
-                  {/* Scrollable Area for Caption Text */}
-                  <div className="flex-1 max-h-48 overflow-y-auto custom-scrollbar pr-2 mb-4">
-                    <p className="text-gray-800 text-lg leading-relaxed mb-4 font-medium whitespace-pre-wrap">
-                      {option.caption}
-                    </p>
-
-                    {option.hashtags && option.hashtags.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {option.hashtags.map((tag, i) => (
-                          <span key={i} className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100 uppercase tracking-tighter">
-                            #{tag.replace(/^#/, '')}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+            
+            {/* Generated Image Result */}
+            {generatedImage && (
+              <div className="mb-8 animate-in fade-in zoom-in-95 duration-500">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 shadow-2xl">
+                  <h3 className="text-white font-bold text-center mb-6 text-2xl drop-shadow-lg flex items-center justify-center gap-3">
+                    🎨 AI Edited Result
+                  </h3>
+                  <div className="relative rounded-xl overflow-hidden shadow-lg border-2 border-white/10 group max-w-2xl mx-auto">
+                    <img
+                      src={generatedImage}
+                      alt="AI Generated"
+                      className="w-full h-auto object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <a
+                        href={generatedImage}
+                        download="ai-generated-image.png"
+                        className="px-6 py-2 bg-white text-gray-900 rounded-full font-bold shadow-lg hover:scale-105 transition-transform flex items-center gap-2 cursor-pointer"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                        Download HD
+                      </a>
+                    </div>
                   </div>
-
-                  <div className="flex justify-end pt-4 border-t border-gray-100 mt-auto">
+                  <div className="mt-6 flex justify-center">
                     <button
-                      onClick={() => {
-                        const fullText = `${option.caption}\n\n${option.hashtags?.map(t => t.startsWith('#') ? t : `#${t}`).join(' ') || ''}`;
-                        handleCopy(fullText.trim());
-                      }}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 hover:bg-indigo-600 hover:text-white font-bold text-sm transition-all group-hover:shadow-md cursor-pointer"
+                      onClick={() => { setGeneratedImage(null); setShowRemoveBg(false); }}
+                      className="px-6 py-2 rounded-full bg-white/10 text-white/70 text-sm hover:text-white hover:bg-white/20 transition-all border border-white/10"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
-                      Copy Vibe
+                      Clear Image
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
 
-            <div className="mt-auto pt-8 flex justify-center">
-              <button
-                onClick={generateCaption}
-                disabled={isLoading}
-                className="px-8 py-4 rounded-xl border border-white/40 bg-white/20 text-white text-lg font-bold hover:bg-white/30 hover:border-white/60 transition-all flex items-center justify-center gap-3 backdrop-blur-sm shadow-xl cursor-pointer hover:scale-105 active:scale-95"
-              >
-                {isLoading ? "Regenerating..." : "🔄 Regenerate All Vibes"}
-              </button>
-            </div>
+            {/* Generated Captions */}
+            {generatedCaption && (
+              <div className="flex-1 flex flex-col">
+                <h3 className="text-white font-bold text-3xl mb-8 text-center drop-shadow-lg flex items-center justify-center gap-3 border-b border-white/10 pb-6">
+                  <span className="animate-bounce">✨</span>
+                  Caption Options
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Array.isArray(generatedCaption) && generatedCaption.map((option, index) => (
+                    <div key={index} className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-white/60 transition-all hover:scale-[1.02] hover:shadow-2xl relative overflow-hidden group flex flex-col min-h-[220px]">
+                      <div className="absolute top-0 left-0 w-2 h-full bg-gradient-to-b from-purple-500 to-pink-500 opacity-80" />
+
+                      {/* Scrollable Area for Caption Text */}
+                      <div className="flex-1 max-h-48 overflow-y-auto custom-scrollbar pr-2 mb-4">
+                        <p className="text-gray-800 text-lg leading-relaxed mb-4 font-medium whitespace-pre-wrap">
+                          {option.caption}
+                        </p>
+
+                        {option.hashtags && option.hashtags.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {option.hashtags.map((tag, i) => (
+                              <span key={i} className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100 uppercase tracking-tighter">
+                                #{tag.replace(/^#/, '')}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end pt-4 border-t border-gray-100 mt-auto">
+                        <button
+                          onClick={() => {
+                            const fullText = `${option.caption}\n\n${option.hashtags?.map(t => t.startsWith('#') ? t : `#${t}`).join(' ') || ''}`;
+                            handleCopy(fullText.trim());
+                          }}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 hover:bg-indigo-600 hover:text-white font-bold text-sm transition-all group-hover:shadow-md cursor-pointer"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
+                          Copy Vibe
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-auto pt-8 flex justify-center">
+                  <button
+                    onClick={generateCaption}
+                    disabled={isLoading}
+                    className="px-8 py-4 rounded-xl border border-white/40 bg-white/20 text-white text-lg font-bold hover:bg-white/30 hover:border-white/60 transition-all flex items-center justify-center gap-3 backdrop-blur-sm shadow-xl cursor-pointer hover:scale-105 active:scale-95"
+                  >
+                    {isLoading ? "Regenerating..." : "🔄 Regenerate All Vibes"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Footer Hint */}
+            <p className="text-sm text-center text-white font-bold tracking-widest mt-8 opacity-90 drop-shadow-md">
+              Powered by Artificially Intelligent Team
+            </p>
           </div>
         )}
       </div>
