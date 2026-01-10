@@ -21,14 +21,26 @@ export default function PersonalityPortal() {
 
   const currentPageData = PAGES[currentPage];
   const canGoNext = currentPageData?.questions.every(
-    q => profile[q.field as keyof PersonalityProfile] !== undefined
+    q => {
+      const val = profile[q.field as keyof PersonalityProfile];
+      if (q.multiple) {
+        return Array.isArray(val) && val.length > 0;
+      }
+      return val !== undefined && val !== '';
+    }
   );
 
-  const handleOptionSelect = (field: keyof PersonalityProfile, value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleOptionSelect = (field: keyof PersonalityProfile, value: string, multiple?: boolean) => {
+    setProfile(prev => {
+      if (multiple) {
+        const currentValues = (prev[field] as string[]) || [];
+        const newValues = currentValues.includes(value)
+          ? currentValues.filter(v => v !== value)
+          : [...currentValues, value];
+        return { ...prev, [field]: newValues };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleNext = () => {
@@ -132,9 +144,11 @@ export default function PersonalityPortal() {
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </div>
                         <div className="text-white font-medium">
-                          {typeof value === 'string' 
-                            ? value.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
-                            : String(value)
+                          {Array.isArray(value)
+                            ? value.map(v => v.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()).join(', ')
+                            : typeof value === 'string' 
+                              ? value.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                              : String(value)
                           }
                         </div>
                       </div>
@@ -204,8 +218,12 @@ export default function PersonalityPortal() {
                         key={option.value}
                         label={option.label}
                         value={option.value}
-                        selected={profile[question.field as keyof PersonalityProfile] === option.value}
-                        onClick={() => handleOptionSelect(question.field as keyof PersonalityProfile, option.value)}
+                        selected={
+                          question.multiple
+                            ? (profile[question.field as keyof PersonalityProfile] as string[] || []).includes(option.value)
+                            : profile[question.field as keyof PersonalityProfile] === option.value
+                        }
+                        onClick={() => handleOptionSelect(question.field as keyof PersonalityProfile, option.value, question.multiple)}
                       />
                     ))}
                   </div>
