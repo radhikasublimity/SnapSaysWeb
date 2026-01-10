@@ -179,7 +179,16 @@ export default function PersonalityPortal() {
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="glass-card max-w-2xl w-full p-8 md:p-12 fade-in">
             <div className="text-center">
-              <div className="text-6xl mb-6">🎉</div>
+              <div className="mb-6 flex justify-center">
+                <div className="relative group">
+                  <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                  <img 
+                    src="/logoMain.png" 
+                    alt="SnapSays Logo" 
+                    className="relative w-40 h-40 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+              </div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 You're All Set!
               </h1>
@@ -233,6 +242,11 @@ export default function PersonalityPortal() {
                   )}
                 </button>
               </div>
+
+              {/* Footer Hint */}
+              <p className="text-xs text-center text-white/50 mt-10 font-medium tracking-wide">
+                Powered by Artificially Intelligent Team
+              </p>
             </div>
           </div>
         </div>
@@ -262,6 +276,18 @@ export default function PersonalityPortal() {
 
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-3xl w-full">
+          {/* Logo Header */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img 
+                src="/logoMain.png" 
+                alt="SnapSays Logo" 
+                className="relative w-40 h-40 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+          </div>
+
           {/* Progress Bar */}
           <ProgressBar current={answeredQuestions} total={totalQuestions} />
 
@@ -305,21 +331,11 @@ export default function PersonalityPortal() {
             />
           </div>
 
-          {/* Page Indicator */}
-          <div className="flex justify-center gap-2 mt-6">
-            {PAGES.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentPage
-                    ? 'w-8 bg-white'
-                    : index < currentPage
-                    ? 'w-2 bg-white/70'
-                    : 'w-2 bg-white/30'
-                }`}
-              />
-            ))}
-          </div>
+
+          {/* Footer Hint */}
+          <p className="text-sm text-center text-white font-bold tracking-widest mt-10 opacity-90 drop-shadow-md">
+            Powered by Artificially Intelligent Team
+          </p>
         </div>
       </div>
     </div>
