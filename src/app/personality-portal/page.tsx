@@ -7,10 +7,12 @@ import { PersonalityProfile, Question } from './types/types';
 import { OptionCard, ProgressBar, NavigationButtons } from './components/UIComponents';
 import { API_CONFIG } from '@/config/constants';
 import Alert from '@/components/Alert';
+import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 import './personality-portal.css';
 
 export default function PersonalityPortal() {
   const router = useRouter();
+  const { isAuthenticated } = useAuthGuard();
   const [currentPage, setCurrentPage] = useState(0);
   const [profile, setProfile] = useState<PersonalityProfile>({
     version: '1.0',
@@ -19,6 +21,9 @@ export default function PersonalityPortal() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Block render until auth check completes
+  if (!isAuthenticated) return null;
 
   const totalQuestions = PAGES.reduce((acc, page) => acc + page.questions.length, 0);
   const answeredQuestions = Object.keys(profile).filter(
@@ -98,9 +103,31 @@ export default function PersonalityPortal() {
 
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
-        setAlert({ message: data.message || "Your personality profile has been saved! Redirecting to login...", type: 'success' });
+        
+        // Auto-login: Set flag
+        sessionStorage.setItem("isLoggedIn", "true");
+
+        // Format and save personality data for Home page usage
+        const personalityArray: { Question: string; Answer: string }[] = [];
+        PAGES.forEach(page => {
+          page.questions.forEach((q: Question) => {
+            const answerValue = profile[q.field as keyof PersonalityProfile];
+            if (typeof answerValue === 'string') {
+               const option = q.options.find(o => o.value === answerValue);
+               if (option) {
+                 personalityArray.push({
+                   Question: q.question,
+                   Answer: option.label // Use label for better readable text
+                 });
+               }
+            }
+          });
+        });
+        sessionStorage.setItem("userPersonality", JSON.stringify(personalityArray));
+
+        setAlert({ message: data.message || "Profile saved! Taking you to dashboard...", type: 'success' });
         localStorage.removeItem('pendingUser'); // Clean up only on success
-        setTimeout(() => router.push('/login'), 2000); // Redirect to login after show alert
+        setTimeout(() => router.push(API_CONFIG.HOME_ROUTE), 1500); 
       } else {
         const errorData = await response.json().catch(() => ({}));
         setAlert({ message: "Failed to save profile: " + (errorData.message || "Server Error"), type: 'error' });

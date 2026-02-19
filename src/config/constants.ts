@@ -1,16 +1,16 @@
 export const API_CONFIG = {
   // Provided by user
-  LOGIN_URL: 'http://fapindetails.sublimitysoft.com/api/api//Common/FetchUser',
+  LOGIN_URL: 'http://snapsaysdotnet.sublimitysoft.com/api/Common/FetchUser',
 
   // Existing local capture generation API
-  CAPTION_GENERATOR_URL: 'http://192.168.0.123:5000/api/generate-caption',
+  CAPTION_GENERATOR_URL: 'http://Snapsaystest.Sublimitysoft.Com/api/generate-caption',
 
   // Personality Portal (Internal)
   PERSONALITY_PORTAL_ROUTE: '/personality-portal',
-  HOME_ROUTE: '/',
+  HOME_ROUTE: '/home',
 
   // New SaveUser API
-  SAVE_USER_URL: 'http://fapindetails.sublimitysoft.com/api/api//Common/SaveUser',
+  SAVE_USER_URL: 'http://snapsaysdotnet.sublimitysoft.com/api/Common/SaveUser',
   // Background Replacement API (Clipdrop)
   CLIPDROP_CONFIG: {
     URL: 'https://clipdrop-api.co/replace-background/v1',

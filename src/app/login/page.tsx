@@ -57,12 +57,17 @@ export default function SnapSaysAuth() {
   
   const router = useRouter();
 
-  // Clear session and local storage on mount to reduce confusion
+  // If already logged in, redirect to home
   useEffect(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log("Auth storage cleared on mount");
-  }, []);
+    const loggedIn = sessionStorage.getItem("isLoggedIn") === "true";
+    if (loggedIn) {
+      router.replace(API_CONFIG.HOME_ROUTE);
+    } else {
+      // Clear stale data for a fresh login attempt
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+  }, [router]);
 
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -102,7 +107,7 @@ export default function SnapSaysAuth() {
     try {
       if (isLogin) {
         // Provided API URL uses query params: http://.../FetchUser?Username=...&Password=...
-        const url = `${API_CONFIG.LOGIN_URL}?Username=${encodeURIComponent(form.email)}&Password=${encodeURIComponent(form.password)}`;
+        const url = `${API_CONFIG.LOGIN_URL}?UserName=${encodeURIComponent(form.email)}&Password=${encodeURIComponent(form.password)}`;
         
         console.log("Calling Login API:", url);
         const response = await fetch(url);
@@ -112,15 +117,19 @@ export default function SnapSaysAuth() {
         
         // Note: Check actual success condition from the API. assuming response.ok or success flag.
         if (response.ok) {
+           // Mark user as logged in
+           sessionStorage.setItem("isLoggedIn", "true");
+
            // Save personality details to sessionStorage
            if (data.Data && data.Data.User_Personality_Details) {
              sessionStorage.setItem("userPersonality", JSON.stringify(data.Data.User_Personality_Details));
            }
-           
+
            setAlert({ message: "Login successful! Welcome back.", type: 'success' });
            setTimeout(() => router.push(API_CONFIG.HOME_ROUTE), 1500);
         } else {
-           setAlert({ message: "Login failed: " + (data.message || "Invalid credentials"), type: 'error' });
+           // Stay on login page — do NOT redirect on error
+           setAlert({ message: "Login failed: " + (data.ResponseMessage || data.message || "Invalid credentials"), type: 'error' });
         }
       } else {
         // Registration: Store credentials for SaveUser API call later
@@ -161,7 +170,7 @@ export default function SnapSaysAuth() {
 
         <div className="relative z-10">
             <div className="text-center mb-8">
-            <div className="mb-6 flex justify-center">
+            <div className="flex justify-center">
               <div className="relative group">
                 <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
                 <img 
@@ -251,12 +260,12 @@ export default function SnapSaysAuth() {
                 {isLoading ? (
                 <Loader text={isLogin ? "Logging in..." : "Creating Account..."} size="sm" />
                 ) : ( 
-                isLogin ? "Login to Dashboard" : "Create Account"
+                isLogin ? "Login" : "Create Account"
                 )}
             </button>
             </form>
 
-            <div className="mt-8 text-center relative z-20">
+            <div className="mt-6 text-center relative z-20">
               <button
                 type="button"
                 onClick={() => {
@@ -265,14 +274,14 @@ export default function SnapSaysAuth() {
                   setErrors({});
                   setTouched({});
                 }}
-                className="text-white hover:text-white/80 font-medium text-sm transition-all border-b border-white/30 hover:border-white pb-0.5"
+                className="text-white font-medium text-sm transition-all hover:cursor-pointer hover:underline pb-0.5"
               >
                 {isLogin ? "Don't have an account? Sign up" : "Already have an account? Login"}
               </button>
             </div>
 
             {/* Social Logins */}
-            <div className="mt-8 pt-6 border-white/20">
+            {/* <div className="mt-8 pt-6 border-white/20">
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex-1 h-px bg-white/20"></div>
                 <span className="text-xs uppercase tracking-[0.2em] text-white font-bold whitespace-nowrap drop-shadow-sm">Social Login</span>
@@ -280,7 +289,6 @@ export default function SnapSaysAuth() {
               </div>
               
               <div className="flex justify-center gap-6 mb-4">
-                {/* Facebook */}
                 <button
                   type="button"
                   className="w-16 h-16 rounded-2xl bg-[#1877F2]/10 border border-[#1877F2]/30 text-white flex items-center justify-center hover:bg-[#1877F2]/20 hover:scale-110 transition-all cursor-pointer group shadow-lg shadow-[#1877F2]/10"
@@ -288,7 +296,6 @@ export default function SnapSaysAuth() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                 </button>
 
-                {/* Instagram */}
                 <button
                   type="button"
                   className="w-16 h-16 rounded-2xl bg-white/5 border border-white/20 text-white flex items-center justify-center hover:bg-white/10 hover:scale-110 transition-all cursor-pointer group shadow-lg"
@@ -298,7 +305,6 @@ export default function SnapSaysAuth() {
                   </div>
                 </button>
 
-                {/* LinkedIn */}
                 <button
                   type="button"
                   className="w-16 h-16 rounded-2xl bg-[#0A66C2]/10 border border-[#0A66C2]/30 text-white flex items-center justify-center hover:bg-[#0A66C2]/20 hover:scale-110 transition-all cursor-pointer group shadow-lg shadow-[#0A66C2]/10"
@@ -306,10 +312,10 @@ export default function SnapSaysAuth() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="#0A66C2"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
                 </button>
               </div>
-            </div>
+            </div> */}
 
             {/* Footer Hint */}
-            <div className="mt-12 pt-6 border-t border-white/10">
+            <div className="pt-6 border-t border-white/10">
               <p className="text-sm text-center text-white font-bold tracking-widest opacity-90 drop-shadow-md">
                   Powered by Artificially Intelligent Team
               </p>
@@ -320,24 +326,61 @@ export default function SnapSaysAuth() {
   );
 }
 
-const Input = ({ label, error, ...props }: InputProps) => (
-  <div className="flex flex-col gap-1.5 group">
-    <label className="text-sm font-semibold text-white ml-1 group-focus-within:text-purple-200 transition-colors">
-        {label}
-    </label>
-    <input
-      {...props}
-      className={`
-        px-4 py-3 rounded-xl bg-white/10 border-2 outline-none text-white placeholder-white/40 transition-all duration-300
-        ${error 
-            ? "border-red-400 bg-red-500/10 focus:border-red-400" 
-            : "border-white/10 focus:border-white/40 focus:bg-white/20 hover:border-white/20"
-        }
-      `}
-    />
-    {error && <span className="text-xs text-red-200 font-medium ml-1 bg-red-500/20 px-2 py-0.5 rounded-md inline-block w-fit">{error}</span>}
-  </div>
+const EyeOpen = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
 );
+
+const EyeClosed = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+
+const Input = ({ label, error, type, ...props }: InputProps) => {
+  const [showPwd, setShowPwd] = useState(false);
+  const isPassword = type === "password";
+
+  return (
+    <div className="flex flex-col gap-1.5 group">
+      <label className="text-sm font-semibold text-white ml-1 group-focus-within:text-purple-200 transition-colors">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          {...props}
+          type={isPassword ? (showPwd ? "text" : "password") : type}
+          className={`
+            w-full px-4 py-3 rounded-xl bg-white/10 border-2 outline-none text-white placeholder-white/40 transition-all duration-300
+            ${isPassword ? "pr-12" : ""}
+            ${error
+              ? "border-red-400 bg-red-500/10 focus:border-red-400"
+              : "border-white/10 focus:border-white/40 focus:bg-white/20 hover:border-white/20"
+            }
+          `}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPwd(v => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors cursor-pointer focus:outline-none"
+            aria-label={showPwd ? "Hide password" : "Show password"}
+          >
+            {showPwd ? <EyeClosed /> : <EyeOpen />}
+          </button>
+        )}
+      </div>
+      {error && <span className="text-xs text-red-200 font-medium ml-1 bg-red-500/20 px-2 py-0.5 rounded-md inline-block w-fit">{error}</span>}
+    </div>
+  );
+};
 
 const Select = ({ label, options, error, ...props }: SelectProps) => (
   <div className="flex flex-col gap-1.5 group">
