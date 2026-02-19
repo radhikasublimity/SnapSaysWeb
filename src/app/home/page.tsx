@@ -47,7 +47,6 @@ export default function Home() {
     setImage(file);
     setPreview(URL.createObjectURL(file) as any);
     setGeneratedCaption(null); // Reset captions on new image
-    setShowRemoveBg(false); // Reset Remove Bg toggle
     setGeneratedImage(null); // Reset generated image
   };
 
@@ -125,8 +124,9 @@ export default function Home() {
       },
       {
         onSuccess: (data: any) => {
-          if (data.summary) {
-            setBgDescription(data.summary);
+          const refinedText = data.summary?.sentence || data.summary;
+          if (refinedText && typeof refinedText === 'string') {
+            setBgDescription(refinedText);
             setAlert({ message: "Prompt refined! ✨", type: "success" });
           } else {
             setAlert({ message: "Could not refine prompt.", type: "error" });
@@ -419,11 +419,11 @@ export default function Home() {
                   <h3 className="text-white font-bold text-center mb-6 text-2xl drop-shadow-lg flex items-center justify-center gap-3">
                     🎨 AI Edited Result
                   </h3>
-                  <div className="relative rounded-xl overflow-hidden shadow-lg border-2 border-white/10 group max-w-2xl mx-auto">
+                  <div className="relative rounded-xl overflow-hidden shadow-lg border-2 border-white/10 group max-w-2xl mx-auto flex justify-center bg-black/20">
                     <img
                       src={generatedImage}
                       alt="AI Generated"
-                      className="w-full h-auto object-cover"
+                      className="max-h-[70vh] w-auto h-auto object-contain"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <a

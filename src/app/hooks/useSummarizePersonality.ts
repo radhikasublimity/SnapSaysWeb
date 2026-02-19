@@ -1,9 +1,14 @@
 import { useState } from 'react';
+import { API_CONFIG } from '@/config/constants';
 
 export interface SummarizePersonalityResponse {
-  summary?: string;
+  summary?: string | {
+    sentence: string;
+    hashtags: string[];
+  };
   hashtags?: string[];
   success?: boolean;
+  message?: string;
 }
 
 export const useSummarizePersonality = () => {
@@ -28,7 +33,7 @@ export const useSummarizePersonality = () => {
       console.log("SummarizePersonality Payload:", JSON.stringify(payload));
       console.log("SummarizePersonality: Sending request to /api/summarize-personality...");
 
-      const response = await fetch("http://Snapsaystest.Sublimitysoft.Com/api/summarize-personality", {
+      const response = await fetch(API_CONFIG.SUMMARIZE_PERSONALITY_URL, {
         method: "POST",
         body: formData,
         // fetch automatically sets the Content-Type to multipart/form-data with the correct boundary
