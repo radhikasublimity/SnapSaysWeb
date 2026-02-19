@@ -14,8 +14,16 @@ export function useAuthGuard() {
 
   useEffect(() => {
     const loggedIn = sessionStorage.getItem("isLoggedIn") === "true";
+    const hasPendingUser = localStorage.getItem("pendingUser") !== null;
+    const isPortalPath = window.location.pathname.includes("/personality-portal");
+
     if (!loggedIn) {
-      router.replace("/login");
+      // Allow access to portal if they are currently signing up
+      if (isPortalPath && hasPendingUser) {
+        setIsAuthenticated(true);
+      } else {
+        router.replace("/login");
+      }
     } else {
       setIsAuthenticated(true);
     }

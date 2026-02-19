@@ -10,7 +10,7 @@ export const API_CONFIG = {
   HOME_ROUTE: '/home',
 
   // New SaveUser API
-  SAVE_USER_URL: 'http://snapsaysdotnet.sublimitysoft.com/api/Common/SaveUser',
+  SAVE_USER_URL: 'http://snapsaysdotnet.sublimitysoft.com/api/Common/SaveUserDetails',
   // Background Replacement API (Clipdrop)
   CLIPDROP_CONFIG: {
     URL: 'https://clipdrop-api.co/replace-background/v1',

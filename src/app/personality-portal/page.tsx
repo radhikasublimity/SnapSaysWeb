@@ -22,8 +22,8 @@ export default function PersonalityPortal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Block render until auth check completes
-  if (!isAuthenticated) return null;
+  // Move early return down to comply with Rules of Hooks
+
 
   const totalQuestions = PAGES.reduce((acc, page) => acc + page.questions.length, 0);
   const answeredQuestions = Object.keys(profile).filter(
@@ -176,6 +176,9 @@ export default function PersonalityPortal() {
     top: `${Math.random() * 100}%`,
     delay: `${Math.random() * 6}s`,
   }));
+
+  // Block render until auth check completes - moved here to satisfy Rules of Hooks
+  if (!isAuthenticated) return null;
 
   if (isComplete) {
     return (

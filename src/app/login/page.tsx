@@ -258,9 +258,9 @@ export default function SnapSaysAuth() {
                 className="w-full btn-primary mt-6 mb-2 flex justify-center items-center h-12 text-lg font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50"
             >
                 {isLoading ? (
-                <Loader text={isLogin ? "Logging in..." : "Creating Account..."} size="sm" />
+                <Loader text={isLogin ? "Logging in..." : "Creating User..."} size="sm" />
                 ) : ( 
-                isLogin ? "Login" : "Create Account"
+                isLogin ? "Login" : "Create User"
                 )}
             </button>
             </form>
