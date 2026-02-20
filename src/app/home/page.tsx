@@ -350,13 +350,17 @@ export default function Home() {
                     <button
                         onClick={handleRefinePrompt}
                         disabled={isRefining || !bgDescription.trim()}
-                        className="text-xs text-purple-300 hover:text-purple-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                        className={bgDescription.trim() 
+                          ? "btn-refine-3d group/refine animate-in fade-in zoom-in duration-300" 
+                          : "text-xs text-purple-300 hover:text-purple-200 flex items-center gap-1 disabled:opacity-50 transition-colors"
+                        }
                     >
                         {isRefining ? (
                             <span className="animate-pulse">Refining...</span>
                         ) : (
                             <>
-                                <span>✨ Refine Prompt</span>
+                                <span className={bgDescription.trim() ? "star-icon-spin" : ""}>✨</span>
+                                <span>Refine Prompt</span>
                             </>
                         )}
                     </button>

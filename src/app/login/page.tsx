@@ -83,11 +83,19 @@ export default function SnapSaysAuth() {
 
   const validateField = (name: keyof FormData, value: string) => {
     let error = "";
-    if (name === "email" && !/\S+@\S+\.\S+/.test(value)) {
-      error = "Invalid email address";
+    if (name === "email") {
+      if (!value.trim()) {
+        error = "Email address is required";
+      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value)) {
+        error = "Invalid email address";
+      }
     }
-    if (name === "password" && value.length < 6) {
-      error = "Password must be at least 6 characters";
+    if (name === "password") {
+      if (!value.trim()) {
+        error = "Password is required";
+      } else if (value.length < 6) {
+        error = "Password must be at least 6 characters";
+      }
     }
     if (name === "name" && !isLogin && !value.trim()) {
       error = "Name is required";
@@ -102,6 +110,42 @@ export default function SnapSaysAuth() {
     setTouched({ ...touched, [field]: true });
 
   const handleSubmit = async () => {
+    // Manual validation check before proceeding
+    const newErrors: Partial<FormData> = {};
+    const newTouched: TouchedFields = { ...touched };
+
+    // Email validation
+    if (!form.email.trim()) {
+      newErrors.email = "Email address is required";
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email)) {
+      newErrors.email = "Invalid email address";
+    }
+    newTouched.email = true;
+
+    // Password validation
+    if (!form.password.trim()) {
+      newErrors.password = "Password is required";
+    } else if (form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+    newTouched.password = true;
+
+    if (!isLogin) {
+      if (!form.name.trim()) newErrors.name = "Name is required";
+      if (!form.dob) newErrors.dob = "Birth date is required";
+      if (!form.zodiac) newErrors.zodiac = "Required";
+      newTouched.name = true;
+      newTouched.dob = true;
+      newTouched.zodiac = true;
+    }
+
+    setErrors(newErrors);
+    setTouched(newTouched);
+
+    if (Object.values(newErrors).some(Boolean)) {
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -115,8 +159,12 @@ export default function SnapSaysAuth() {
         
         console.log("Login API Response:", data);
         
-        // Note: Check actual success condition from the API. assuming response.ok or success flag.
-        if (response.ok) {
+        // API might return 200 OK but with an error code in the body (e.g., ResponseCode: 500)
+        const isSuccess = response.ok && 
+                         (data.ResponseCode === 200 || data.ResponseCode === "200") &&
+                         data.Data !== null;
+
+        if (isSuccess) {
            // Mark user as logged in
            sessionStorage.setItem("isLoggedIn", "true");
 
@@ -129,7 +177,8 @@ export default function SnapSaysAuth() {
            setTimeout(() => router.push(API_CONFIG.HOME_ROUTE), 1500);
         } else {
            // Stay on login page — do NOT redirect on error
-           setAlert({ message: "Login failed: " + (data.ResponseMessage || data.message || "Invalid credentials"), type: 'error' });
+           const errorMsg = data.ResponseMessage || data.message || "Invalid credentials or server error. Please try again.";
+           setAlert({ message: "Login failed: " + errorMsg, type: 'error' });
         }
       } else {
         // Registration: Store credentials for SaveUser API call later
@@ -152,7 +201,9 @@ export default function SnapSaysAuth() {
 
   const isValid =
     Object.values(errors).every((e) => !e) &&
-    (isLogin || Object.values(form).every(Boolean));
+    form.email.trim().length > 0 &&
+    form.password.trim().length > 0 &&
+    (isLogin || (form.name.trim().length > 0 && form.dob.length > 0 && form.zodiac.length > 0));
 
   return (
     <div className="min-h-screen app-theme-bg flex items-center justify-center p-4">
@@ -197,8 +248,10 @@ export default function SnapSaysAuth() {
                         value={form.name}
                         onBlur={() => handleBlur("name")}
                         onChange={(e) => {
-                        setForm({ ...form, name: e.target.value });
-                        if (touched.name) validateField("name", e.target.value);
+                          const val = e.target.value;
+                          setForm({ ...form, name: val });
+                          validateField("name", val);
+                          setTouched(prev => ({ ...prev, name: true }));
                         }}
                         error={touched.name && errors.name ? errors.name : undefined}
                     />
@@ -212,8 +265,10 @@ export default function SnapSaysAuth() {
                 value={form.email}
                 onBlur={() => handleBlur("email")}
                 onChange={(e) => {
-                setForm({ ...form, email: e.target.value });
-                if (touched.email) validateField("email", e.target.value);
+                  const val = e.target.value;
+                  setForm({ ...form, email: val });
+                  validateField("email", val);
+                  setTouched(prev => ({ ...prev, email: true }));
                 }}
                 error={touched.email && errors.email ? errors.email : undefined}
             />
@@ -224,8 +279,10 @@ export default function SnapSaysAuth() {
                 value={form.password}
                 onBlur={() => handleBlur("password")}
                 onChange={(e) => {
-                    setForm({ ...form, password: e.target.value });
-                    if (touched.password) validateField("password", e.target.value);
+                    const val = e.target.value;
+                    setForm({ ...form, password: val });
+                    validateField("password", val);
+                    setTouched(prev => ({ ...prev, password: true }));
                 }}
                 error={touched.password && errors.password ? errors.password : undefined}
             />
@@ -237,7 +294,11 @@ export default function SnapSaysAuth() {
                         value={form.zodiac}
                         options={zodiacSigns}
                         onBlur={() => handleBlur("zodiac")}
-                        onChange={(e) => setForm({ ...form, zodiac: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({ ...form, zodiac: val });
+                          setTouched(prev => ({ ...prev, zodiac: true }));
+                        }}
                         error={touched.zodiac && !form.zodiac ? "Required" : undefined}
                     />
                     <Input
@@ -245,7 +306,12 @@ export default function SnapSaysAuth() {
                         type="date"
                         value={form.dob}
                         onBlur={() => handleBlur("dob")}
-                        onChange={(e) => setForm({ ...form, dob: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setForm({ ...form, dob: val });
+                          validateField("dob", val);
+                          setTouched(prev => ({ ...prev, dob: true }));
+                        }}
                         error={touched.dob && !form.dob ? "Required" : undefined}
                     />
                 </div>

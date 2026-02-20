@@ -104,6 +104,14 @@ export default function PersonalityPortal() {
       if (response.ok) {
         const data = await response.json().catch(() => ({}));
         
+        // Check for success in the response body as well
+        const isSuccess = data.ResponseCode === 200 || data.ResponseCode === "200";
+        
+        if (!isSuccess) {
+           setAlert({ message: "Failed to save profile: " + (data.ResponseMessage || data.message || "Server Error"), type: 'error' });
+           return;
+        }
+
         // Auto-login: Set flag
         sessionStorage.setItem("isLoggedIn", "true");
 

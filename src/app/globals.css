@@ -382,3 +382,51 @@ body {
   height: 10px;
   animation: confetti-fall 3s linear;
 }
+
+/* 3D Refine Button */
+.btn-refine-3d {
+  background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+  color: white !important;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 0 #5b21b6, 0 8px 15px rgba(124, 58, 237, 0.4);
+  transform: translateY(-2px);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem !important;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-refine-3d:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 0 #5b21b6, 0 10px 20px rgba(124, 58, 237, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-refine-3d:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 0px 0 #5b21b6, 0 2px 4px rgba(124, 58, 237, 0.3);
+}
+
+.btn-refine-3d:disabled {
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+@keyframes star-spin {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  to { transform: rotate(360deg) scale(1); }
+}
+
+.star-icon-spin {
+  animation: star-spin 2s linear infinite;
+}
