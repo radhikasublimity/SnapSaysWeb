@@ -60,13 +60,15 @@ interface NavigationButtonsProps {
   onNext: () => void;
   canGoNext: boolean;
   isLastPage: boolean;
+  isLoading?: boolean;
 }
 
 export function NavigationButtons({ 
   onBack, 
   onNext, 
   canGoNext, 
-  isLastPage 
+  isLastPage,
+  isLoading
 }: NavigationButtonsProps) {
   return (
     <div className="flex gap-4 mt-8">
@@ -74,18 +76,26 @@ export function NavigationButtons({
         <button
           onClick={onBack}
           className="btn-secondary flex-1"
+          disabled={isLoading}
         >
           ← Back
         </button>
       )}
       <button
         onClick={onNext}
-        disabled={!canGoNext}
+        disabled={!canGoNext || isLoading}
         className={`btn-primary flex-1 ${!onBack ? 'w-full' : ''} ${
-          isLastPage && canGoNext ? 'pulse-glow' : ''
-        }`}
+          isLastPage && canGoNext && !isLoading ? 'pulse-glow' : ''
+        } flex items-center justify-center gap-2`}
       >
-        {isLastPage ? 'Complete ✨' : 'Next →'}
+        {isLoading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Saving...
+          </>
+        ) : (
+          isLastPage ? 'Complete ✨' : 'Next →'
+        )}
       </button>
     </div>
   );

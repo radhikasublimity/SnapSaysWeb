@@ -14,33 +14,16 @@ export type MoodVsImage = 'always_mood' | 'always_image' | 'let_ai_decide';
 export type Platform = 'instagram' | 'snapchat' | 'linkedin' | 'multiple_platforms';
 
 export interface PersonalityProfile {
-  // Page 1
-  vibe?: Vibe;
-  humorLevel?: HumorLevel;
-  
-  // Page 2
-  emojiUsage?: EmojiUsage;
-  captionLength?: CaptionLength;
-  
-  // Page 3
-  persona?: Persona;
-  postGoal?: PostGoal;
-  
-  // Page 4
-  captionPriority?: CaptionPriority;
-  onlineLevel?: OnlineLevel;
-  
-  // Page 5
-  personalLevel?: PersonalLevel;
-  captionType?: CaptionType;
-  
-  // Page 6
-  hashtagStyle?: HashtagStyle;
-  boldness?: Boldness;
-  
-  // Page 7
-  moodVsImage?: MoodVsImage;
-  platform?: Platform;
+  comfortZone?: string;
+  socialApproach?: string;
+  freeTime?: string;
+  foodPreference?: string;
+  favoritePlaces?: string;
+  personalityType?: string;
+  stressManagement?: string;
+  routinePreference?: string;
+  peopleConnection?: string;
+  selfPerception?: string;
   
   // Metadata
   completedAt?: string;
@@ -51,6 +34,7 @@ export interface QuestionOption {
   value: string;
   label: string;
   icon?: string;
+  optionId: number;
 }
 
 export interface Question {
@@ -58,6 +42,7 @@ export interface Question {
   question: string;
   options: QuestionOption[];
   field: keyof PersonalityProfile;
+  numericId: number;
 }
 
 export interface PageData {

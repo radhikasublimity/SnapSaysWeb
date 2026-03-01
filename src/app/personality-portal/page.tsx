@@ -1,18 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PAGES } from './data/pages';
-import { PersonalityProfile } from './types/types';
+import { PersonalityProfile, Question } from './types/types';
 import { OptionCard, ProgressBar, NavigationButtons } from './components/UIComponents';
+import { API_CONFIG } from '@/config/constants';
+import Alert from '@/components/Alert';
+import { useAuthGuard } from '@/app/hooks/useAuthGuard';
 import './personality-portal.css';
 
 export default function PersonalityPortal() {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthGuard();
   const [currentPage, setCurrentPage] = useState(0);
   const [profile, setProfile] = useState<PersonalityProfile>({
     version: '1.0',
   });
   const [isComplete, setIsComplete] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Move early return down to comply with Rules of Hooks
+
 
   const totalQuestions = PAGES.reduce((acc, page) => acc + page.questions.length, 0);
   const answeredQuestions = Object.keys(profile).filter(
@@ -21,21 +32,21 @@ export default function PersonalityPortal() {
 
   const currentPageData = PAGES[currentPage];
   const canGoNext = currentPageData?.questions.every(
-    q => profile[q.field as keyof PersonalityProfile] !== undefined
+    q => {
+      const val = profile[q.field as keyof PersonalityProfile];
+      return val !== undefined && val !== '';
+    }
   );
 
   const handleOptionSelect = (field: keyof PersonalityProfile, value: string) => {
-    setProfile(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNext = () => {
     if (currentPage < PAGES.length - 1) {
       setCurrentPage(prev => prev + 1);
     } else {
-      // Complete the profile
+      // Just mark as complete locally
       const completedProfile: PersonalityProfile = {
         ...profile,
         completedAt: new Date().toISOString(),
@@ -44,11 +55,96 @@ export default function PersonalityPortal() {
       setIsComplete(true);
       setShowConfetti(true);
       
-      // Save to localStorage
+      // Save locally but don't call API yet
       localStorage.setItem('personalityProfile', JSON.stringify(completedProfile));
-      
-      // Hide confetti after 3 seconds
       setTimeout(() => setShowConfetti(false), 3000);
+    }
+  };
+
+  const handleFinalSubmission = async () => {
+    setIsSubmitting(true);
+    
+    try {
+      // 1. Get credentials from localStorage
+      const pendingUserStr = localStorage.getItem('pendingUser');
+      const pendingUser = pendingUserStr ? JSON.parse(pendingUserStr) : { username: 'guest', password: '' };
+      
+      // 2. Map answers
+      const answers: { questionId: number; optionId: number }[] = [];
+      
+      PAGES.forEach(page => {
+        page.questions.forEach((q: Question) => {
+          const userChoice = profile[q.field as keyof PersonalityProfile];
+          
+          if (typeof userChoice === 'string') {
+              const opt = q.options.find(o => o.value === userChoice);
+              if (opt) {
+                answers.push({ questionId: q.numericId, optionId: opt.optionId });
+              }
+          }
+        });
+      });
+
+      // 3. Construct Payload
+      const payload = {
+        username: pendingUser.username,
+        password: pendingUser.password,
+        answers: answers
+      };
+
+      console.log("Final Submission SaveUser payload:", payload);
+
+      // 4. API Call
+      const response = await fetch(API_CONFIG.SAVE_USER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        
+        // Check for success in the response body as well
+        const isSuccess = data.ResponseCode === 200 || data.ResponseCode === "200";
+        
+        if (!isSuccess) {
+           setAlert({ message: "Failed to save profile: " + (data.ResponseMessage || data.message || "Server Error"), type: 'error' });
+           return;
+        }
+
+        // Auto-login: Set flag
+        sessionStorage.setItem("isLoggedIn", "true");
+
+        // Format and save personality data for Home page usage
+        const personalityArray: { Question: string; Answer: string }[] = [];
+        PAGES.forEach(page => {
+          page.questions.forEach((q: Question) => {
+            const answerValue = profile[q.field as keyof PersonalityProfile];
+            if (typeof answerValue === 'string') {
+               const option = q.options.find(o => o.value === answerValue);
+               if (option) {
+                 personalityArray.push({
+                   Question: q.question,
+                   Answer: option.label // Use label for better readable text
+                 });
+               }
+            }
+          });
+        });
+        sessionStorage.setItem("userPersonality", JSON.stringify(personalityArray));
+
+        setAlert({ message: data.message || "Profile saved! Taking you to dashboard...", type: 'success' });
+        localStorage.removeItem('pendingUser'); // Clean up only on success
+        setTimeout(() => router.push(API_CONFIG.HOME_ROUTE), 1500); 
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setAlert({ message: "Failed to save profile: " + (errorData.message || "Server Error"), type: 'error' });
+      }
+    } catch (e) {
+      console.error("Submission error:", e);
+      setAlert({ message: "An error occurred while saving your profile.", type: 'error' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,9 +185,17 @@ export default function PersonalityPortal() {
     delay: `${Math.random() * 6}s`,
   }));
 
+  // Block render until auth check completes - moved here to satisfy Rules of Hooks
+  if (!isAuthenticated) return null;
+
   if (isComplete) {
     return (
       <div className="personality-portal-bg">
+        <Alert 
+          message={alert?.message || null} 
+          type={alert?.type} 
+          onClose={() => setAlert(null)} 
+        />
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none z-50">
             {Array.from({ length: 50 }, (_, i) => (
@@ -113,7 +217,16 @@ export default function PersonalityPortal() {
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="glass-card max-w-2xl w-full p-8 md:p-12 fade-in">
             <div className="text-center">
-              <div className="text-6xl mb-6">🎉</div>
+              <div className="mb-6 flex justify-center">
+                <div className="relative group">
+                  <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                  <img 
+                    src="/logoMain.png" 
+                    alt="SnapSays Logo" 
+                    className="relative w-40 h-40 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+                  />
+                </div>
+              </div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 You're All Set!
               </h1>
@@ -132,9 +245,11 @@ export default function PersonalityPortal() {
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </div>
                         <div className="text-white font-medium">
-                          {typeof value === 'string' 
-                            ? value.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
-                            : String(value)
+                          {Array.isArray(value)
+                            ? value.map(v => v.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()).join(', ')
+                            : typeof value === 'string' 
+                              ? value.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim()
+                              : String(value)
                           }
                         </div>
                       </div>
@@ -145,17 +260,31 @@ export default function PersonalityPortal() {
               <div className="flex gap-4">
                 <button
                   onClick={handleRestart}
+                  disabled={isSubmitting}
                   className="btn-secondary flex-1"
                 >
                   Retake Quiz
                 </button>
                 <button
-                  onClick={() => window.location.href = '/'}
-                  className="btn-primary flex-1"
+                  onClick={handleFinalSubmission}
+                  disabled={isSubmitting}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
                 >
-                  Start Creating →
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Start Creating →'
+                  )}
                 </button>
               </div>
+
+              {/* Footer Hint */}
+              <p className="text-xs text-center text-white/50 mt-10 font-medium tracking-wide">
+                Powered by Artificially Intelligent Team
+              </p>
             </div>
           </div>
         </div>
@@ -165,6 +294,11 @@ export default function PersonalityPortal() {
 
   return (
     <div className="personality-portal-bg">
+      <Alert 
+        message={alert?.message || null} 
+        type={alert?.type} 
+        onClose={() => setAlert(null)} 
+      />
       {/* Floating Particles */}
       {particles.map(particle => (
         <div
@@ -180,6 +314,18 @@ export default function PersonalityPortal() {
 
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-3xl w-full">
+          {/* Logo Header */}
+          <div className="mb-8 flex justify-center">
+            <div className="relative group">
+              <div className="absolute -inset-1 opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+              <img 
+                src="/logoMain.png" 
+                alt="SnapSays Logo" 
+                className="relative w-40 h-40 drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-500"
+              />
+            </div>
+          </div>
+
           {/* Progress Bar */}
           <ProgressBar current={answeredQuestions} total={totalQuestions} />
 
@@ -217,26 +363,17 @@ export default function PersonalityPortal() {
             <NavigationButtons
               onBack={currentPage > 0 ? handleBack : undefined}
               onNext={handleNext}
-              canGoNext={canGoNext}
+              canGoNext={canGoNext && !isSubmitting}
               isLastPage={currentPage === PAGES.length - 1}
+              isLoading={isSubmitting}
             />
           </div>
 
-          {/* Page Indicator */}
-          <div className="flex justify-center gap-2 mt-6">
-            {PAGES.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentPage
-                    ? 'w-8 bg-white'
-                    : index < currentPage
-                    ? 'w-2 bg-white/70'
-                    : 'w-2 bg-white/30'
-                }`}
-              />
-            ))}
-          </div>
+
+          {/* Footer Hint */}
+          <p className="text-sm text-center text-white font-bold tracking-widest mt-10 opacity-90 drop-shadow-md">
+            Powered by Artificially Intelligent Team
+          </p>
         </div>
       </div>
     </div>
