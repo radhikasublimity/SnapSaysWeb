@@ -192,19 +192,9 @@ export default function Home() {
     }
   };
 
-  const generateCaption = async () => {
-    if (!image) {
-      setAlert({ message: "Please upload an image first!", type: 'warning' });
-      return;
-    }
-    // Platform is always Instagram — no check needed
-    // if (!platform) { ... }
-
+  const generateCaptionRequest = async (formData: FormData) => {
     setIsLoading(true);
     setGeneratedCaption(null);
-
-    const formData = new FormData();
-    formData.append("image", image);
 
     // Get personality data from sessionStorage
     let personalityKnowledge = "";
@@ -264,6 +254,81 @@ export default function Home() {
       setAlert({ message: "Failed to generate caption.", type: 'error' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateCaption = async () => {
+    if (!image) {
+      setAlert({ message: "Please upload an image first!", type: 'warning' });
+      return;
+    }
+    // Platform is always Instagram — no check needed
+    // if (!platform) { ... }
+
+    const formData = new FormData();
+    formData.append("image", image);
+
+    await generateCaptionRequest(formData);
+  };
+
+  const updateCaption = async () => {
+    if (!generatedImage) {
+      setAlert({ message: "No edited image found. Please change the background first!", type: 'warning' });
+      return;
+    }
+
+    try {
+      const response = await fetch(generatedImage);
+      if (!response.ok) {
+        throw new Error("Could not load edited image for caption generation.");
+      }
+
+      const blob = await response.blob();
+      const formData = new FormData();
+      formData.append("image", blob, "updated-image.png");
+
+      await generateCaptionRequest(formData);
+    } catch (error) {
+      console.error(error);
+      setAlert({ message: "Failed to prepare edited image for caption generation.", type: 'error' });
+    }
+  };
+
+  const handleShareOnWhatsApp = async () => {
+    if (!generatedImage) {
+      setAlert({ message: "No edited image to share. Please change the background first!", type: 'warning' });
+      return;
+    }
+
+    try {
+      // Prefer native share (mobile devices, can include WhatsApp)
+      if (typeof navigator !== "undefined" && (navigator as any).share) {
+        try {
+          const response = await fetch(generatedImage);
+          const blob = await response.blob();
+          const file = new File([blob], "snapsays-image.png", { type: blob.type || "image/png" });
+          const nav: any = navigator;
+
+          if (nav.canShare && nav.canShare({ files: [file] })) {
+            await nav.share({
+              files: [file],
+              title: "SnapSays AI Image",
+              text: "Check out this AI-edited image from SnapSays!",
+            });
+            return;
+          }
+        } catch (e) {
+          console.error("Native share failed, falling back to WhatsApp Web link.", e);
+        }
+      }
+
+      // Fallback: open WhatsApp Web with a text message
+      const shareText = encodeURIComponent("Check out this AI-edited image from SnapSays!");
+      const whatsappUrl = `https://wa.me/?text=${shareText}`;
+      window.open(whatsappUrl, "_blank");
+    } catch (error) {
+      console.error(error);
+      setAlert({ message: "Failed to share image on WhatsApp.", type: 'error' });
     }
   };
 
@@ -377,7 +442,7 @@ export default function Home() {
                     disabled={isBgLoading || !image}
                     className="flex-1 py-2 rounded-lg bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition-all shadow-lg shadow-pink-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isBgLoading ? "Processing..." : "Save & Remove"}
+                    {isBgLoading ? "Processing..." : "Save & Change"}
                   </button>
                 </div>
               </div>
@@ -429,7 +494,7 @@ export default function Home() {
                       alt="AI Generated"
                       className="max-h-[70vh] w-auto h-auto object-contain"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
                       <a
                         href={generatedImage}
                         download="ai-generated-image.png"
@@ -438,9 +503,26 @@ export default function Home() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                         Download HD
                       </a>
+                      <button
+                        type="button"
+                        onClick={handleShareOnWhatsApp}
+                        className="p-3 rounded-full bg-green-500 text-white shadow-lg hover:bg-green-600 hover:scale-105 transition-transform flex items-center justify-center cursor-pointer"
+                        aria-label="Share on WhatsApp"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20.52 3.48A11.78 11.78 0 0 0 12.04 0C5.73.02.68 5.08.7 11.39c0 2.01.52 3.98 1.52 5.72L0 24l7.09-2.2a11.8 11.8 0 0 0 5.01 1.16h.01c6.31 0 11.37-5.06 11.39-11.36A11.3 11.3 0 0 0 20.52 3.48Zm-8.48 18.1h-.01a9.8 9.8 0 0 1-4.99-1.37l-.36-.21-4.21 1.31 1.37-4.1-.23-.42a9.77 9.77 0 0 1-1.44-5.08C2.15 6.16 6.1 2.2 11.01 2.2c2.61 0 5.06 1.02 6.91 2.88a9.7 9.7 0 0 1 2.87 6.89c-.02 5.38-4.4 9.61-9.75 9.61Zm5.35-7.27c-.29-.15-1.7-.84-1.96-.94-.26-.1-.45-.15-.64.15-.19.29-.74.94-.9 1.14-.17.19-.33.22-.62.07-.29-.15-1.24-.46-2.36-1.47-.87-.78-1.46-1.74-1.63-2.03-.17-.29-.02-.45.13-.6.14-.14.29-.34.43-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.15-.64-1.54-.88-2.11-.23-.55-.47-.48-.64-.49h-.55c-.19 0-.51.07-.78.36-.26.29-1.02.99-1.02 2.41 0 1.42 1.04 2.79 1.19 2.98.15.19 2.04 3.12 4.94 4.37.69.3 1.23.48 1.65.62.69.22 1.32.19 1.82.12.55-.08 1.7-.69 1.94-1.36.24-.67.24-1.25.17-1.36-.07-.12-.26-.19-.55-.34Z" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                  <div className="mt-6 flex justify-center">
+                  <div className="mt-6 flex justify-center gap-4 flex-wrap">
+                    <button
+                      onClick={updateCaption}
+                      disabled={isLoading}
+                      className="px-6 py-2 rounded-full bg-purple-500 text-white text-sm font-bold hover:bg-purple-600 transition-all border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Update Caption
+                    </button>
                     <button
                       onClick={() => { setGeneratedImage(null); setShowRemoveBg(false); }}
                       className="px-6 py-2 rounded-full bg-white/10 text-white/70 text-sm hover:text-white hover:bg-white/20 transition-all border border-white/10"
